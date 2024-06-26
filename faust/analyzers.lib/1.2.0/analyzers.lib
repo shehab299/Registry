@@ -5,7 +5,7 @@
 // * <https://github.com/grame-cncm/faustlibraries/blob/master/analyzers.lib>
 //########################################################################################
 
-ma = library("pkg:faust/faust/maths.lib@");
+ma = library("pkg:faust/faust/maths.lib@2.8.0");
 ba = library("pkg:faust/faust/basics.lib@1.18.0");
 ro = library("pkg:faust/faust/routes.lib@1.2.0");
 si = library("pkg:faust/faust/signals.lib@1.5.0");

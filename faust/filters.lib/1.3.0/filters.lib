@@ -38,7 +38,7 @@
 
 ma = library("pkg:faust/faust/maths.lib@2.8.0");
 ba = library("pkg:faust/faust/basics.lib@1.18.0");
-ro = library("pkg:faust/faust/routes.lib@unknown");
+ro = library("pkg:faust/faust/routes.lib@1.2.0");
 de = library("pkg:faust/faust/delays.lib@1.1.0");
 an = library("pkg:faust/faust/analyzers.lib@1.2.0");
 ef = library("pkg:faust/faust/misceffects.lib@2.5.0");

@@ -2014,3 +2014,6 @@ polyblep_triangle(freq) = polyblep_square(freq) : fi.pole(0.999) : *(4 * freq / 
 
 // end further contributions section
 //########################################################################################
+
+
+process = oscsin(60);

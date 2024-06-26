@@ -43,7 +43,7 @@ closed source license or any other license if you decide so.
 ************************************************************************/
 
 ba = library("pkg:faust/faust/basics.lib@1.18.0");
-ro = library("pkg:faust/faust/routes.lib@unknown");
+ro = library("pkg:faust/faust/routes.lib@1.2.0");
 ma = library("pkg:faust/faust/maths.lib@2.8.0");
 si = library("pkg:faust/faust/signals.lib@1.5.0");
 

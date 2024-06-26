@@ -42,8 +42,8 @@ ma = library("pkg:faust/faust/maths.lib@2.8.0");
 si = library("pkg:faust/faust/signals.lib@1.5.0");
 ba = library("pkg:faust/faust/basics.lib@1.18.0");
 os = library("pkg:faust/faust/oscillators.lib@1.5.1");
-ho = library("pkg:faust/faust/hoa.lib@unknown");
-ro = library("pkg:faust/faust/routes.lib@unknown");
+ho = library("pkg:faust/faust/hoa.lib@1.4.0");
+ro = library("pkg:faust/faust/routes.lib@1.2.0");
 de = library("pkg:faust/faust/delays.lib@1.1.0");
 
 declare name "High Order Ambisonics library";
