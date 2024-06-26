@@ -20,8 +20,8 @@ Copyright (C) 2023 Yann Orlarey
 Copyright (C) 2010-2023 GRAME, Centre National de Creation Musicale
 ---------------------------------------------------------------------
 This program is free software; you can redistribute it and/or modify
-it under the terms of the GNU Lesser General Public License as 
-published by the Free Software Foundation; either version 2.1 of the 
+it under the terms of the GNU Lesser General Public License as
+published by the Free Software Foundation; either version 2.1 of the
 License, or (at your option) any later version.
 
 This program is distributed in the hope that it will be useful,
@@ -32,7 +32,7 @@ GNU Lesser General Public License for more details.
 You should have received a copy of the GNU Lesser General Public
 License along with the GNU C Library; if not, write to the Free
 Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
-02111-1307 USA. 
+02111-1307 USA.
 
 EXCEPTION TO THE LGPL LICENSE : As a special exception, you may create a
 larger FAUST program which directly or indirectly imports this library
@@ -46,13 +46,13 @@ closed source license or any other license if you decide so.
 ************************************************************************
 ************************************************************************/
 
-ba = library("basics.lib");
+ba = library("pkg:faust/faust/basics.lib@1.18.0");
 
 declare name "Reduce Library";
 declare author "Yann Orlarey";
 declare copyright "Grame and Yann Orlarey";
 declare version "1.2.0";
-declare license "LGPL with exception"; 
+declare license "LGPL with exception";
 
 
 
@@ -82,7 +82,7 @@ declare license "LGPL with exception";
 //
 // Where:
 //
-// * `op`: is a binary operation 
+// * `op`: is a binary operation
 // * `N`: is the number of incomming signals (`N>0`). We use a capital letter
 // here to indicate that the number of incomming signals must be constant and
 // known at compile time.
@@ -177,16 +177,16 @@ botReduce(op,n) = par(i,outputs(op),_), botReduce(op,n-1) : op;
 // Where:
 //
 // * `op`: is a binary operation
-// * `n`: is the number of consecutive samples in a block. 
+// * `n`: is the number of consecutive samples in a block.
 //-----------------------------------------------------------------------------
 
 reduce(op, n, x) = compute ~ (_,_,_) : (!,!,_)
-    with {
-        compute(acc, count, val) =
-            ba.if(count<n, op(acc,x), x), // new acc
-            ba.if(count<n, count+1, 1),   // new count
-            ba.if(count<n, val, acc);     // new val
-    };
+with {
+compute(acc, count, val) =
+ba.if(count<n, op(acc,x), x), // new acc
+ba.if(count<n, count+1, 1),   // new count
+ba.if(count<n, val, acc);     // new val
+};
 
 
 //--------------------`(rm.)reducemap`---------------------------
@@ -205,16 +205,16 @@ reduce(op, n, x) = compute ~ (_,_,_) : (!,!,_)
 //
 // * `op`: is a binary operation
 // * `foo`: is a function applied to the result of the reduction
-// * `n`: is the number of consecutive samples in a block. 
+// * `n`: is the number of consecutive samples in a block.
 //-----------------------------------------------------------------------------
 
 reducemap(op, foo, n, x) = compute ~ (_,_,_) : (!,!,_)
-    with {
-        compute(acc, count, val) =
-            ba.if(count<n, op(acc,x), x),   // new acc
-            ba.if(count<n, count+1, 1),     // new count
-            ba.if(count<n, val, foo(acc));  // new val
-    };
+with {
+compute(acc, count, val) =
+ba.if(count<n, op(acc,x), x),   // new acc
+ba.if(count<n, count+1, 1),     // new count
+ba.if(count<n, val, foo(acc));  // new val
+};
 
 // Some examples using `reduce`and `reducemap`
 //

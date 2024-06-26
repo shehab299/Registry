@@ -49,9 +49,9 @@ closed source license or any other license if you decide so.
 ************************************************************************
 ************************************************************************/
 
-// This library contains platform specific constants 
-pl = library("platform.lib");
-ma = library("maths.lib"); // for compatible copy/paste out of this file
+// This library contains platform specific constants
+pl = library("pkg:faust/faust/platform.lib@unknown");
+ma = library("pkg:faust/faust/maths.lib@2.8.0");
 
 declare name "Faust Math Library";
 declare version "2.8.0";
@@ -146,9 +146,9 @@ E = 2.71828182845904523536;
 
 
 //---------------------------------`(ma.)EPSILON`---------------------------------------
-// Constant EPSILON available in simple/double/quad precision, 
-// as defined in the [floating-point standard](https://en.wikipedia.org/wiki/IEEE_754) 
-// and [machine epsilon](https://en.wikipedia.org/wiki/Machine_epsilon), 
+// Constant EPSILON available in simple/double/quad precision,
+// as defined in the [floating-point standard](https://en.wikipedia.org/wiki/IEEE_754)
+// and [machine epsilon](https://en.wikipedia.org/wiki/Machine_epsilon),
 // that is smallest positive number such that `1.0 + EPSILON != 1.0`.
 //
 // #### Usage
@@ -193,7 +193,7 @@ quadprecision MAX = 1.7976931348623158e+308;
 fixedpointprecision MAX = 1.7976931348623158e+308;
 
 // Obsolete, kept for compatibility reasons
-INFINITY = MAX; 
+INFINITY = MAX;
 
 //---------------------------------`(ma.)FTZ`---------------------------------------
 // Flush to zero: force samples under the "maximum subnormal number"
@@ -736,10 +736,10 @@ chebychev(n,x) = 2*x*chebychev(n-1, x) - chebychev(n-2, x);
 // <http://www.csounds.com/manual/html/chebyshevpoly.html>
 //-------------------------------------------------------------------------
 chebychevpoly(lcoef) = _ <: L(0,lcoef) :> _
-	with {
-		L(n,(c,cs)) = chebychev(n)*c, L(n+1,cs);
-		L(n,c)      = chebychev(n)*c;
-	};
+with {
+L(n,(c,cs)) = chebychev(n)*c, L(n+1,cs);
+L(n,c)      = chebychev(n)*c;
+};
 
 
 //------------------`(ma.)diffn`----------------------------
@@ -776,7 +776,7 @@ signum(x) = (x>0)-(x<0);
 // ```
 // 2^nextpow2(n) : _
 // ```
-// Useful for allocating delay lines, e.g., 
+// Useful for allocating delay lines, e.g.,
 // ```
 // delay(2^nextpow2(maxDelayNeeded), currentDelay);
 // ```

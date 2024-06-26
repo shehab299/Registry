@@ -7,7 +7,7 @@
 //########################################################################################
 
 /************************************************************************
- ************************************************************************
+************************************************************************
 FAUST library file
 Copyright (C) 2003-2012 GRAME, Centre National de Creation Musicale
 ----------------------------------------------------------------------
@@ -36,11 +36,11 @@ compiled code. In particular the resulting compiled code has no obligation
 to be LGPL or GPL. For example you are free to choose a commercial or
 closed source license or any other license if you decide so.
 
- ************************************************************************
- ************************************************************************/
+************************************************************************
+************************************************************************/
 
-si = library("signals.lib");
-ma = library("maths.lib");
+si = library("pkg:faust/faust/signals.lib@1.5.0");
+ma = library("pkg:faust/faust/maths.lib@2.8.0");
 
 declare name "Faust Spatialization Library";
 declare version "1.1.0";
@@ -69,7 +69,7 @@ panner(g) = _ <: *(1-g), *(g);
 // The channels are not respatialized. Their gains are simply
 // adjusted. A pan of 0 preserves the left channel and silences
 // the right channel. A pan of 1 has the opposite effect.
-// A pan value of 0.5 applies a gain of 0.5 to both channels. 
+// A pan value of 0.5 applies a gain of 0.5 to both channels.
 //
 // #### Usage
 //
@@ -85,9 +85,9 @@ declare dryWetMixer author "David Braun";
 
 constantPowerPan(p, x, y) = x*gainLeft, y*gainRight
 with {
-    theta = ma.PI*p/2.;
-    gainLeft = cos(theta)/sqrt(2.);
-    gainRight = sin(theta)/sqrt(2.);
+theta = ma.PI*p/2.;
+gainLeft = cos(theta)/sqrt(2.);
+gainRight = sin(theta)/sqrt(2.);
 };
 
 
@@ -111,8 +111,8 @@ declare spat author "Laurent Pottier, revised by Romain Michon";
 
 spat(N,a,d)	= _ <: par(i, N, *(scaler(i, N, a, d) : si.smooth(0.9999)))
 with {
-	scaler(i,N,a,d) = (d/2.0+0.5)
-		* sqrt(max(0.0, 1.0 - abs(fmod(a+0.5+float(N-i)/N, 1.0) - 0.5) * N * d));
+scaler(i,N,a,d) = (d/2.0+0.5)
+* sqrt(max(0.0, 1.0 - abs(fmod(a+0.5+float(N-i)/N, 1.0) - 0.5) * N * d));
 };
 
 
@@ -132,20 +132,20 @@ with {
 //----------------------------------------
 stereoize(p) = S(inputs(p), outputs(p))
 with {
-	// degenerated processor with no outputs
-	S(n,0) = !,! : 0,0; 		// just in case, probably a rare case
-	// processors with no inputs
-	S(0,1) = !,! : p <: _,_; 	// add two fake inputs and split output
-	S(0,2) = !,! : p;
-	S(0,n) = !,! : p,p :> _,_;	// we are sure this will work if n is odd
-	// processors with one input
-	S(1,1) = p,p; 				// add two fake inputs and split output
-	S(1,n) = p,p :> _,_;		// we are sure this will work if n is odd
-	// processors with two inputs
-	S(2,1) = p <: _,_; 			// split the output
-	S(2,2) = p; 				// nothing to do, p is already stereo
-	// processors with inputs > 2 and outputs > 2
-	S(n,m) = _,_ <: p,p :> _,_;	// we are sure this works if n or p are odd
+// degenerated processor with no outputs
+S(n,0) = !,! : 0,0; 		// just in case, probably a rare case
+// processors with no inputs
+S(0,1) = !,! : p <: _,_; 	// add two fake inputs and split output
+S(0,2) = !,! : p;
+S(0,n) = !,! : p,p :> _,_;	// we are sure this will work if n is odd
+// processors with one input
+S(1,1) = p,p; 				// add two fake inputs and split output
+S(1,n) = p,p :> _,_;		// we are sure this will work if n is odd
+// processors with two inputs
+S(2,1) = p <: _,_; 			// split the output
+S(2,2) = p; 				// nothing to do, p is already stereo
+// processors with inputs > 2 and outputs > 2
+S(n,m) = _,_ <: p,p :> _,_;	// we are sure this works if n or p are odd
 };
 
 // TODO: need demo function of spat here
@@ -155,19 +155,19 @@ with {
 //////////////////////////////////////////////////////////////////////////////////////////
 
 // music.lib:
-	// The following functions could remain available but they would have to be
-	// factorized and reimplemented using the `par` function...
-	// bus2 = _,_;
-	// bus3 = _,_,_;
-	// bus4 = _,_,_,_;
-	// bus5 = _,_,_,_,_;
-	// bus6 = _,_,_,_,_,_;
-	// bus7 = _,_,_,_,_,_,_;
-	// bus8 = _,_,_,_,_,_,_,_;
-	// gain2(g) = *(g),*(g);
-	// gain3(g) = *(g),*(g),*(g);
-	// gain4(g) = *(g),*(g),*(g),*(g);
-	// gain5(g) = *(g),*(g),*(g),*(g),*(g);
-	// gain6(g) = *(g),*(g),*(g),*(g),*(g),*(g);
-	// gain7(g) = *(g),*(g),*(g),*(g),*(g),*(g),*(g);
-	// gain8(g) = *(g),*(g),*(g),*(g),*(g),*(g),*(g),*(g);
+// The following functions could remain available but they would have to be
+// factorized and reimplemented using the `par` function...
+// bus2 = _,_;
+// bus3 = _,_,_;
+// bus4 = _,_,_,_;
+// bus5 = _,_,_,_,_;
+// bus6 = _,_,_,_,_,_;
+// bus7 = _,_,_,_,_,_,_;
+// bus8 = _,_,_,_,_,_,_,_;
+// gain2(g) = *(g),*(g);
+// gain3(g) = *(g),*(g),*(g);
+// gain4(g) = *(g),*(g),*(g),*(g);
+// gain5(g) = *(g),*(g),*(g),*(g),*(g);
+// gain6(g) = *(g),*(g),*(g),*(g),*(g),*(g);
+// gain7(g) = *(g),*(g),*(g),*(g),*(g),*(g),*(g);
+// gain8(g) = *(g),*(g),*(g),*(g),*(g),*(g),*(g),*(g);

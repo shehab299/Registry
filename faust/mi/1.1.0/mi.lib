@@ -47,8 +47,8 @@
 // * <https://github.com/grame-cncm/faustlibraries/blob/master/mi.lib>
 //##############################################################################
 
-ma = library("maths.lib");
-ba = library("basics.lib");
+ma = library("pkg:faust/faust/maths.lib@2.8.0");
+ba = library("pkg:faust/faust/basics.lib@1.18.0");
 
 declare name "Faust mass-interaction physical modelling library";
 declare version "1.1.0";
@@ -82,8 +82,8 @@ declare copyright "2018-2020 GRAME / GIPSA-Lab";
 //---------------------------------------------------------
 initState(init) = R(0,init)
 with{
-  R(n,(initn,init)) = +(1: ba.impulsify@n * initn) : R(n+1,init);
-  R(n,initn) = +(1 : ba.impulsify@n * initn);
+R(n,(initn,init)) = +(1: ba.impulsify@n * initn) : R(n+1,init);
+R(n,initn) = +(1 : ba.impulsify@n * initn);
 };
 
 
@@ -113,13 +113,13 @@ with{
 //---------------------------------------------------------
 mass(m, grav, x0, x1) = equation
 with{
-  A = 2;
-  B = -1;
-  C = 1/m;
-  equation = x 
-	letrec{
-    'x = A*(x : initState(x0)) + B*(x' : initState((x1,x0))) + (_-grav)*(C);
-	};
+A = 2;
+B = -1;
+C = 1/m;
+equation = x
+letrec{
+'x = A*(x : initState(x0)) + B*(x' : initState((x1,x0))) + (_-grav)*(C);
+};
 };
 
 
@@ -144,13 +144,13 @@ with{
 //---------------------------------------------------------
 oscil(m, k, z, grav, x0, x1) = equation
 with{
-  A = 2 - (k + z)/m;
-  B = z/m - 1;
-  C = 1/m;
-  equation = x
-	letrec{
-    'x = A*(x : initState(x0)) + B*(x' : initState((x1, x0))) + (_-grav)*(C);
-	};
+A = 2 - (k + z)/m;
+B = z/m - 1;
+C = 1/m;
+equation = x
+letrec{
+'x = A*(x : initState(x0)) + B*(x' : initState((x1, x0))) + (_-grav)*(C);
+};
 };
 
 
@@ -172,12 +172,12 @@ with{
 //---------------------------------------------------------
 ground(x0) = equation
 with{
-  // could this term be removed or simlified? Need "unused" input force signal for the routing scheme to work
-  C = 0;
-  equation = x 
-	letrec{
-		'x = (x : initState(x0)) + *(C);
-	};
+// could this term be removed or simlified? Need "unused" input force signal for the routing scheme to work
+C = 0;
+equation = x
+letrec{
+'x = (x : initState(x0)) + *(C);
+};
 };
 
 
@@ -223,10 +223,10 @@ posInput(init) = _,_ : !,_ : initState(init);
 // * `x1r`: initial delayed position of mass 1 (unused here)
 // * `x2r`: initial delayed position of mass 2 (unused here)
 //---------------------------------------------------------
-spring(k, x1r0, x2r0, x1, x2) = 
-  k*deltapos <: *(-1),_
+spring(k, x1r0, x2r0, x1, x2) =
+k*deltapos <: *(-1),_
 with{
-    deltapos = x1-x2;
+deltapos = x1-x2;
 };
 
 
@@ -247,10 +247,10 @@ with{
 // * `x1r`: initial delayed position of mass 1
 // * `x2r`: initial delayed position of mass 2
 //---------------------------------------------------------
-damper(z, x1r0, x2r0, x1, x2) = 
-  z*deltavel <: *(-1),_
+damper(z, x1r0, x2r0, x1, x2) =
+z*deltavel <: *(-1),_
 with{
-    deltavel = (x1 - x1' : initState(x1r0)) - (x2 - x2' : initState(x2r0));
+deltavel = (x1 - x1' : initState(x1r0)) - (x2 - x2' : initState(x2r0));
 };
 
 
@@ -271,12 +271,12 @@ with{
 // * `x1r`: initial delayed position of mass 1
 // * `x2r`: initial delayed position of mass 2
 //---------------------------------------------------------
-springDamper(k, z, x1r0, x2r0, x1, x2) = 
-  k*deltapos + 
-  z*deltavel <: *(-1),_
+springDamper(k, z, x1r0, x2r0, x1, x2) =
+k*deltapos +
+z*deltavel <: *(-1),_
 with{
-    deltapos = x1-x2;
-    deltavel = (x1 - x1' : initState(x1r0)) - (x2 - x2' : initState(x2r0));
+deltapos = x1-x2;
+deltavel = (x1 - x1' : initState(x1r0)) - (x2 - x2' : initState(x2r0));
 };
 
 
@@ -301,11 +301,11 @@ with{
 // * `x2r`: initial delayed position of mass 2
 //---------------------------------------------------------
 nlSpringDamper2(k, q, z, x1r0, x2r0, x1, x2) =
-  k*deltapos + q * ma.signum(deltapos) * pow(deltapos, 2) +
-  z*deltavel <: *(-1),_
+k*deltapos + q * ma.signum(deltapos) * pow(deltapos, 2) +
+z*deltavel <: *(-1),_
 with{
-    deltapos = x1-x2;
-    deltavel = (x1 - x1' : initState(x1r0)) - (x2 - x2' : initState(x2r0));
+deltapos = x1-x2;
+deltavel = (x1 - x1' : initState(x1r0)) - (x2 - x2' : initState(x2r0));
 };
 
 
@@ -330,11 +330,11 @@ with{
 // * `x2r`: initial delayed position of mass 2
 //---------------------------------------------------------
 nlSpringDamper3(k, q, z, x1r0, x2r0, x1, x2) =
-  k*deltapos + q * pow(deltapos, 3) +
-  z*deltavel <: *(-1),_
+k*deltapos + q * pow(deltapos, 3) +
+z*deltavel <: *(-1),_
 with{
-    deltapos = x1-x2;
-    deltavel = (x1 - x1' : initState(x1r0)) - (x2 - x2' : initState(x2r0));
+deltapos = x1-x2;
+deltavel = (x1 - x1' : initState(x1r0)) - (x2 - x2' : initState(x2r0));
 };
 
 
@@ -367,22 +367,22 @@ with{
 // * `x2r`: initial delayed position of mass 2
 //---------------------------------------------------------
 nlSpringDamperClipped(s, c, k, z, x1r0, x2r0, x1, x2) =
-    select2(c == 0,
-        select2(s >= k,
-            select2(absdeltapos <= b,
-                // Overdamping induced here to prevent "locked" states...
-                k * deltapos + (z+0.3*k)*deltavel,
-                s * deltapos + c * pow(deltapos, 3) + z*deltavel
-            ),
-            k * deltapos + z*deltavel
-        ),
-        s * deltapos + z*deltavel
-    )<: *(-1),_
+select2(c == 0,
+select2(s >= k,
+select2(absdeltapos <= b,
+// Overdamping induced here to prevent "locked" states...
+k * deltapos + (z+0.3*k)*deltavel,
+s * deltapos + c * pow(deltapos, 3) + z*deltavel
+),
+k * deltapos + z*deltavel
+),
+s * deltapos + z*deltavel
+)<: *(-1),_
 with{
-    b = sqrt(k-s)/c;
-    deltapos = x1-x2;
-    deltavel = (x1 - x1' : initState(x1r0)) - (x2 - x2' : initState(x2r0));
-    absdeltapos = abs(deltapos);
+b = sqrt(k-s)/c;
+deltapos = x1-x2;
+deltavel = (x1 - x1' : initState(x1r0)) - (x2 - x2' : initState(x2r0));
+absdeltapos = abs(deltapos);
 
 };
 
@@ -409,23 +409,23 @@ with{
 // * `x1r`: initial delayed position of mass 1
 // * `x2r`: initial delayed position of mass 2
 //---------------------------------------------------------
-nlPluck(k, scale, z, x1r0, x2r0, x1, x2) = 
-  select2(absdeltapos < tipdist,
-    select2(absdeltapos < scale,
-	  		0,
-	  		ma.signum(deltapos)* -tipdist * k + Kend * deltapos + 
-              z* deltavel
-	  		),
-	(k - Kend) * -deltapos + z* deltavel
-	) <:  *(-1),_
+nlPluck(k, scale, z, x1r0, x2r0, x1, x2) =
+select2(absdeltapos < tipdist,
+select2(absdeltapos < scale,
+0,
+ma.signum(deltapos)* -tipdist * k + Kend * deltapos +
+z* deltavel
+),
+(k - Kend) * -deltapos + z* deltavel
+) <:  *(-1),_
 with{
-  deltapos = x1 - x2;
-  deltavel = (x1 - x1' : initState(x1r0)) - (x2 - x2' : initState(x2r0));
+deltapos = x1 - x2;
+deltavel = (x1 - x1' : initState(x1r0)) - (x2 - x2' : initState(x2r0));
 
-  absdeltapos = abs(deltapos);
-  sharpness = 10;
-  tipdist = scale / sharpness;
-  Kend = k / sharpness;
+absdeltapos = abs(deltapos);
+sharpness = 10;
+tipdist = scale / sharpness;
+Kend = k / sharpness;
 };
 
 
@@ -452,23 +452,23 @@ with{
 // * `x2r`: initial delayed position of mass 2
 //---------------------------------------------------------
 nlBow(z, scale, type, x1r0, x2r0, x1, x2) =
-  select2(type > 0,
-    select2(absdeltavel < tipvel,
-        select2(absdeltavel < scale,
-	  		0,
-	  		ma.signum(deltavel)* tipvel * z - Zend * deltavel
-	  		),
-	    (z - Zend) * deltavel
-	),
-    0.63 * z * deltavel *exp(-4*pow(deltavel/scale, 2) + 1/2)
-  )
-   <:  *(-1),_
+select2(type > 0,
+select2(absdeltavel < tipvel,
+select2(absdeltavel < scale,
+0,
+ma.signum(deltavel)* tipvel * z - Zend * deltavel
+),
+(z - Zend) * deltavel
+),
+0.63 * z * deltavel *exp(-4*pow(deltavel/scale, 2) + 1/2)
+)
+<:  *(-1),_
 with{
-  deltavel = (x1 - x1' : initState(x1r0)) - (x2 - x2' : initState(x2r0));
-  absdeltavel = abs(deltavel);
-  sharpness = 3;
-  tipvel = scale / sharpness;
-  Zend = z / sharpness;
+deltavel = (x1 - x1' : initState(x1r0)) - (x2 - x2' : initState(x2r0));
+absdeltavel = abs(deltavel);
+sharpness = 3;
+tipvel = scale / sharpness;
+Zend = z / sharpness;
 };
 
 
@@ -491,10 +491,10 @@ with{
 // * `x1r`: initial delayed position of mass 1
 // * `x2r`: initial delayed position of mass 2
 //---------------------------------------------------------
-collision(k,z,thres,x1r0,x2r0,x1,x2) = 
-  springDamper(k,z,x1r0,x2r0,x1+thres,x2) : (select2(comp,0,_),select2(comp,0,_))
+collision(k,z,thres,x1r0,x2r0,x1,x2) =
+springDamper(k,z,x1r0,x2r0,x1+thres,x2) : (select2(comp,0,_),select2(comp,0,_))
 with{
-  comp = (x2-x1) < thres;
+comp = (x2-x1) < thres;
 };
 
 
@@ -521,8 +521,8 @@ with{
 // * `x1r`: initial delayed position of mass 1
 // * `x2r`: initial delayed position of mass 2
 //---------------------------------------------------------
-nlCollisionClipped(s, c, k, z, thres, x1r0, x2r0, x1, x2) = 
-  nlSpringDamperClipped(s,c,k,z,x1r0,x2r0,x1+thres,x2) : (select2(comp,0,_),select2(comp,0,_))
+nlCollisionClipped(s, c, k, z, thres, x1r0, x2r0, x1, x2) =
+nlSpringDamperClipped(s,c,k,z,x1r0,x2r0,x1+thres,x2) : (select2(comp,0,_),select2(comp,0,_))
 with{
-  comp = (x2-x1) < thres;
+comp = (x2-x1) < thres;
 };

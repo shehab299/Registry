@@ -1,7 +1,7 @@
 //#################################### webaudio.lib ########################################
 //An implementation of the WebAudio API filters (https://www.w3.org/TR/webaudio/). Its official prefix is `wa`.
 //
-// This library implement WebAudio filters, using their C++ version as a starting point, 
+// This library implement WebAudio filters, using their C++ version as a starting point,
 // taken from Mozilla Firefox implementation.
 //
 // #### References
@@ -40,8 +40,8 @@ closed source license or any other license if you decide so.
 ************************************************************************
 ************************************************************************/
 
-ma = library("maths.lib");
-fi = library("filters.lib");
+ma = library("pkg:faust/faust/maths.lib@2.8.0");
+fi = library("pkg:faust/faust/filters.lib@1.3.0");
 
 declare name "Faust WebAudio Filters Library";
 declare author "GRAME";
@@ -56,155 +56,155 @@ declare license "LGPL with exception";
 
 BiquadFilter(f0, dBgain, Q, aDetune) = environment
 {
-    lowpass2 = setNormCoeffs(b0, b1, b2, a0, a1, a2)
-    with {
-        g = pow(10.0, -0.05 * Q);
-        w0 = ma.PI * cutoff;
-        cos_w0 = cos(w0);
-        alpha = 0.5 * sin(w0) * g;
+lowpass2 = setNormCoeffs(b0, b1, b2, a0, a1, a2)
+with {
+g = pow(10.0, -0.05 * Q);
+w0 = ma.PI * cutoff;
+cos_w0 = cos(w0);
+alpha = 0.5 * sin(w0) * g;
 
-        b1 = 1.0 - cos_w0;
-        b0 = 0.5 * b1;
-        b2 = b0;
-        a0 = 1.0 + alpha;
-        a1 = -2.0 * cos_w0;
-        a2 = 1.0 - alpha;
-    };
-    
-    highpass2 = setNormCoeffs(b0, b1, b2, a0, a1, a2)
-    with {
-        g = pow(10.0, -0.05 * Q);
-        w0 = ma.PI * cutoff;
-        cos_w0 = cos(w0);
-        alpha = 0.5 * sin(w0) * g;
+b1 = 1.0 - cos_w0;
+b0 = 0.5 * b1;
+b2 = b0;
+a0 = 1.0 + alpha;
+a1 = -2.0 * cos_w0;
+a2 = 1.0 - alpha;
+};
 
-        b1 = -1.0 - cos_w0;
-        b0 = -0.5 * b1;
-        b2 = b0;
-        a0 = 1.0 + alpha;
-        a1 = -2.0 * cos_w0;
-        a2 = 1.0 - alpha;
-    };
+highpass2 = setNormCoeffs(b0, b1, b2, a0, a1, a2)
+with {
+g = pow(10.0, -0.05 * Q);
+w0 = ma.PI * cutoff;
+cos_w0 = cos(w0);
+alpha = 0.5 * sin(w0) * g;
 
-    bandpass2 = setNormCoeffs(b0, b1, b2, a0, a1, a2)
-    with {
-        // Don't let Q go negative, which causes an unstable filter.
-        Qaux = max(0.01, Q);
+b1 = -1.0 - cos_w0;
+b0 = -0.5 * b1;
+b2 = b0;
+a0 = 1.0 + alpha;
+a1 = -2.0 * cos_w0;
+a2 = 1.0 - alpha;
+};
 
-        w0 = ma.PI * cutoff;
-        alpha = sin(w0) / (2 * Qaux);
-        k = cos(w0);
+bandpass2 = setNormCoeffs(b0, b1, b2, a0, a1, a2)
+with {
+// Don't let Q go negative, which causes an unstable filter.
+Qaux = max(0.01, Q);
 
-        b0 = alpha;
-        b1 = 0;
-        b2 = -alpha;
-        a0 = 1 + alpha;
-        a1 = -2 * k;
-        a2 = 1 - alpha;
-    };
+w0 = ma.PI * cutoff;
+alpha = sin(w0) / (2 * Qaux);
+k = cos(w0);
 
-    notch2 = setNormCoeffs(b0, b1, b2, a0, a1, a2)
-    with {
-        // Don't let Q go negative, which causes an unstable filter.
-        Qaux = max(0.01, Q);
+b0 = alpha;
+b1 = 0;
+b2 = -alpha;
+a0 = 1 + alpha;
+a1 = -2 * k;
+a2 = 1 - alpha;
+};
 
-        w0 = ma.PI * cutoff;
-        alpha = sin(w0) / (2 * Qaux);
-        k = cos(w0);
+notch2 = setNormCoeffs(b0, b1, b2, a0, a1, a2)
+with {
+// Don't let Q go negative, which causes an unstable filter.
+Qaux = max(0.01, Q);
 
-        b0 = 1;
-        b1 = -2 * k;
-        b2 = 1;
-        a0 = 1 + alpha;
-        a1 = -2 * k;
-        a2 = 1 - alpha;
-    };
+w0 = ma.PI * cutoff;
+alpha = sin(w0) / (2 * Qaux);
+k = cos(w0);
 
-    allpass2 = setNormCoeffs(b0, b1, b2, a0, a1, a2)
-    with {
-        // Don't let Q go negative, which causes an unstable filter.
-        Qaux = max(0.01, Q);
-        
-        w0 = ma.PI * cutoff;
-        alpha = sin(w0) / (2 * Qaux);
-        k = cos(w0);
+b0 = 1;
+b1 = -2 * k;
+b2 = 1;
+a0 = 1 + alpha;
+a1 = -2 * k;
+a2 = 1 - alpha;
+};
 
-        b0 = 1 - alpha;
-        b1 = -2 * k;
-        b2 = 1 + alpha;
-        a0 = 1 + alpha;
-        a1 = -2 * k;
-        a2 = 1 - alpha; 
-    };
+allpass2 = setNormCoeffs(b0, b1, b2, a0, a1, a2)
+with {
+// Don't let Q go negative, which causes an unstable filter.
+Qaux = max(0.01, Q);
 
-    peaking2 = setNormCoeffs(b0, b1, b2, a0, a1, a2)
-    with {
-        // Don't let Q go negative, which causes an unstable filter.
-        Qaux = max(0.01, Q);
-        
-        A = pow(10.0, dBgain / 40);
-        w0 = ma.PI * cutoff;
-        alpha = sin(w0) / (2 * Qaux);
-        k = cos(w0);
+w0 = ma.PI * cutoff;
+alpha = sin(w0) / (2 * Qaux);
+k = cos(w0);
 
-        b0 = 1 + alpha * A;
-        b1 = -2 * k;
-        b2 = 1 - alpha * A;
-        a0 = 1 + alpha / A;
-        a1 = -2 * k;
-        a2 = 1 - alpha / A;
-   };
-    
-    lowshelf2 = setNormCoeffs(b0, b1, b2, a0, a1, a2)
-    with {
-        A = pow(10.0, dBgain / 40);
+b0 = 1 - alpha;
+b1 = -2 * k;
+b2 = 1 + alpha;
+a0 = 1 + alpha;
+a1 = -2 * k;
+a2 = 1 - alpha;
+};
 
-        w0 = ma.PI * cutoff;
-        S = 1;  // filter slope (1 is max value)
-        alpha = 0.5 * sin(w0) * sqrt((A + 1 / A) * (1 / S - 1) + 2);
-        k = cos(w0);
-        k2 = 2 * sqrt(A) * alpha;
-        aPlusOne = A + 1;
-        aMinusOne = A - 1;
+peaking2 = setNormCoeffs(b0, b1, b2, a0, a1, a2)
+with {
+// Don't let Q go negative, which causes an unstable filter.
+Qaux = max(0.01, Q);
 
-        b0 = A * (aPlusOne - aMinusOne * k + k2);
-        b1 = 2 * A * (aMinusOne - aPlusOne * k);
-        b2 = A * (aPlusOne - aMinusOne * k - k2);
-        a0 = aPlusOne + aMinusOne * k + k2;
-        a1 = -2 * (aMinusOne + aPlusOne * k);
-        a2 = aPlusOne + aMinusOne * k - k2;
-    };
-    
-    highshelf2 = setNormCoeffs(b0, b1, b2, a0, a1, a2)
-    with {
-        A = pow(10.0, dBgain / 40);
+A = pow(10.0, dBgain / 40);
+w0 = ma.PI * cutoff;
+alpha = sin(w0) / (2 * Qaux);
+k = cos(w0);
 
-        w0 = ma.PI * cutoff;
-        S = 1;  // filter slope (1 is max value)
-        alpha = 0.5 * sin(w0) * sqrt((A + 1 / A) * (1 / S - 1) + 2);
-        k = cos(w0);
-        k2 = 2 * sqrt(A) * alpha;
-        aPlusOne = A + 1;
-        aMinusOne = A - 1;
+b0 = 1 + alpha * A;
+b1 = -2 * k;
+b2 = 1 - alpha * A;
+a0 = 1 + alpha / A;
+a1 = -2 * k;
+a2 = 1 - alpha / A;
+};
 
-        b0 = A * (aPlusOne - aMinusOne * k + k2);
-        b1 = 2 * A * (aMinusOne - aPlusOne * k);
-        b2 = A * (aPlusOne - aMinusOne * k - k2);
-        a0 = aPlusOne + aMinusOne * k + k2;
-        a1 = -2 * (aMinusOne + aPlusOne * k);
-        a2 = aPlusOne + aMinusOne * k - k2;
-    };
+lowshelf2 = setNormCoeffs(b0, b1, b2, a0, a1, a2)
+with {
+A = pow(10.0, dBgain / 40);
 
-    // --------------------- implementation ------------------------------
+w0 = ma.PI * cutoff;
+S = 1;  // filter slope (1 is max value)
+alpha = 0.5 * sin(w0) * sqrt((A + 1 / A) * (1 / S - 1) + 2);
+k = cos(w0);
+k2 = 2 * sqrt(A) * alpha;
+aPlusOne = A + 1;
+aMinusOne = A - 1;
 
-    // Convert rbj coeffs to fi.tf2 coeffs
-    setNormCoeffs(b0,b1,b2,a0,a1,a2) = (b0/a0, b1/a0, b2/a0, a1/a0, a2/a0);
+b0 = A * (aPlusOne - aMinusOne * k + k2);
+b1 = 2 * A * (aMinusOne - aPlusOne * k);
+b2 = A * (aPlusOne - aMinusOne * k - k2);
+a0 = aPlusOne + aMinusOne * k + k2;
+a1 = -2 * (aMinusOne + aPlusOne * k);
+a2 = aPlusOne + aMinusOne * k - k2;
+};
 
-    nyquist = ma.SR * 0.5;
-    nFreq = (f0 / nyquist) * pow(2, aDetune / 1200);
-  
-    // Limit cutoff between 0.01 and 0.99.
-    cutoff = max(0.01, min(nFreq, 0.99));
+highshelf2 = setNormCoeffs(b0, b1, b2, a0, a1, a2)
+with {
+A = pow(10.0, dBgain / 40);
+
+w0 = ma.PI * cutoff;
+S = 1;  // filter slope (1 is max value)
+alpha = 0.5 * sin(w0) * sqrt((A + 1 / A) * (1 / S - 1) + 2);
+k = cos(w0);
+k2 = 2 * sqrt(A) * alpha;
+aPlusOne = A + 1;
+aMinusOne = A - 1;
+
+b0 = A * (aPlusOne - aMinusOne * k + k2);
+b1 = 2 * A * (aMinusOne - aPlusOne * k);
+b2 = A * (aPlusOne - aMinusOne * k - k2);
+a0 = aPlusOne + aMinusOne * k + k2;
+a1 = -2 * (aMinusOne + aPlusOne * k);
+a2 = aPlusOne + aMinusOne * k - k2;
+};
+
+// --------------------- implementation ------------------------------
+
+// Convert rbj coeffs to fi.tf2 coeffs
+setNormCoeffs(b0,b1,b2,a0,a1,a2) = (b0/a0, b1/a0, b2/a0, a1/a0, a2/a0);
+
+nyquist = ma.SR * 0.5;
+nFreq = (f0 / nyquist) * pow(2, aDetune / 1200);
+
+// Limit cutoff between 0.01 and 0.99.
+cutoff = max(0.01, min(nFreq, 0.99));
 
 };
 
@@ -286,7 +286,7 @@ bandpass2(f0, Q, dtune, x) = BiquadFilter(f0, 1, Q, dtune).bandpass2, x : fi.tf2
 
 //--------------`(wa.)notch2`--------------
 // Standard notch filter, also called a band-stop or band-rejection filter.
-// It is the opposite of a bandpass filter: frequencies outside the give range of frequencies 
+// It is the opposite of a bandpass filter: frequencies outside the give range of frequencies
 // pass through, frequencies inside it are attenuated.
 //
 // #### Usage

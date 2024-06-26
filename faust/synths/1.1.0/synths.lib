@@ -1,5 +1,5 @@
 //################################### synths.lib ##########################################
-// This library contains a collection of synthesizers. Its official prefix is `sy`. 
+// This library contains a collection of synthesizers. Its official prefix is `sy`.
 //
 // #### References
 // * <https://github.com/grame-cncm/faustlibraries/blob/master/synths.lib>
@@ -37,12 +37,12 @@ closed source license or any other license if you decide so.
 ************************************************************************
 ************************************************************************/
 
-ma = library("maths.lib");
-ba = library("basics.lib");
-en = library("envelopes.lib");
-fi = library("filters.lib");
-os = library("oscillators.lib");
-no = library("noises.lib");
+ma = library("pkg:faust/faust/maths.lib@2.8.0");
+ba = library("pkg:faust/faust/basics.lib@1.18.0");
+en = library("pkg:faust/faust/envelopes.lib@1.3.0");
+fi = library("pkg:faust/faust/filters.lib@1.3.0");
+os = library("pkg:faust/faust/oscillators.lib@1.5.1");
+no = library("pkg:faust/faust/noises.lib@1.4.1");
 
 declare name "Faust Synthesizer Library";
 declare version "1.1.0";
@@ -89,8 +89,8 @@ declare dubDub author "Romain Michon";
 
 dubDub(freq,ctFreq,q,gate) = os.sawtooth(freq)*gainEnvelope : fi.resonlp(ctFreq,q,1)
 with {
-    maxGain = 0.5;
-    gainEnvelope = en.smoothEnvelope(0.01,gate)*maxGain;
+maxGain = 0.5;
+gainEnvelope = en.smoothEnvelope(0.01,gate)*maxGain;
 };
 
 
@@ -114,9 +114,9 @@ declare sawTrombone author "Romain Michon";
 
 sawTrombone(freq,gain,gate) = os.sawtooth(freq)*gainEnvelope : fi.lowpass(3,cutoff)
 with {
-    // controls both the gain of the instrument and the lowpass frequency
-    gainEnvelope = en.smoothEnvelope(0.01,gate)*gain;
-    cutoff = gainEnvelope*5000+50;
+// controls both the gain of the instrument and the lowpass frequency
+gainEnvelope = en.smoothEnvelope(0.01,gate)*gain;
+cutoff = gainEnvelope*5000+50;
 };
 
 
@@ -140,11 +140,11 @@ declare combString author "Romain Michon";
 
 combString(freq,res,gate) = excitation : fi.fb_fcomb(maxDel,N,b0,aN)
 with {
-    maxDel = 1024;
-    N = ma.SR/freq;
-    b0 = 1;
-    aN = ba.tau2pole(res*0.001)*-1;
-    excitation = no.noise*en.ar(0.001,0.001,gate);
+maxDel = 1024;
+N = ma.SR/freq;
+b0 = 1;
+aN = ba.tau2pole(res*0.001)*-1;
+excitation = no.noise*en.ar(0.001,0.001,gate);
 };
 
 
@@ -176,10 +176,10 @@ declare additiveDrum author "Romain Michon";
 
 additiveDrum(freq,freqRatio,gain,harmDec,att,rel,gate) = par(i,N,os.osc(modeFreq(i))*gainEnvelope(i)) :> _
 with {
-    N = ba.count(freqRatio);
-    modeFreq(i) = freq*ba.take(i+1,freqRatio);
-    modeGain(i) = ba.take(i+1,gain);
-    gainEnvelope(i) = modeGain(i)*en.ar(att,rel*(1-(harmDec*(i/N))),gate);
+N = ba.count(freqRatio);
+modeFreq(i) = freq*ba.take(i+1,freqRatio);
+modeGain(i) = ba.take(i+1,gain);
+gainEnvelope(i) = modeGain(i)*en.ar(att,rel*(1-(harmDec*(i/N))),gate);
 };
 
 
@@ -205,17 +205,17 @@ declare fm author "Romain Michon";
 
 fm(freqs,indices) = seq(i,N,fmBlock(i))
 with {
-    N = ba.count(freqs);
-    freq(i) = ba.take(N-i,freqs);
-    gain(i) = ba.take(N-i,indices);
-    fmBlock(0) = freq(0) : os.osc;
-    fmBlock(i) = *(gain(i))+freq(i) : os.osc;
+N = ba.count(freqs);
+freq(i) = ba.take(N-i,freqs);
+gain(i) = ba.take(N-i,indices);
+fmBlock(0) = freq(0) : os.osc;
+fmBlock(i) = *(gain(i))+freq(i) : os.osc;
 };
 
 
 //===============================Drum Synthesis===================================
-// Drum Synthesis ported in Faust from a version written in [Elementary](https://www.elementary.audio/) 
-// and JavaScript by Nick Thompson. 
+// Drum Synthesis ported in Faust from a version written in [Elementary](https://www.elementary.audio/)
+// and JavaScript by Nick Thompson.
 //
 // #### Reference
 //
@@ -224,9 +224,9 @@ with {
 
 //-----------------------------------`(sy.)kick`---------------------------------------
 // Kick drum synthesis via a pitched sine sweep.
-// 
-// #### Usage 
-// 
+//
+// #### Usage
+//
 // ```
 // kick(pitch, click, attack, decay, drive, gate) : _
 // ```
@@ -239,25 +239,25 @@ with {
 // * `decay`: decay time in seconds, tuned for [0.005s, 4.0s]
 // * `drive`: a gain multiplier going into the saturator. Tuned for [1, 10]
 // * `gate`: the gate which triggers the amp envelope
-// 
+//
 // #### Reference
 //
 // <https://github.com/nick-thompson/drumsynth/blob/master/kick.js>
 //-------------------------------------------------------------------------------------
 kick(pitch, click, attack, decay, drive, gate) = out
 with {
-    env = en.adsr(attack, decay, 0.0, 0.1, gate);
-    pitchenv = en.adsr(0.005, click, 0.0, 0.1, gate);
-    clean = env * os.osc((1 + pitchenv * 4) * pitch);
-    out = ma.tanh(clean * drive);
+env = en.adsr(attack, decay, 0.0, 0.1, gate);
+pitchenv = en.adsr(0.005, click, 0.0, 0.1, gate);
+clean = env * os.osc((1 + pitchenv * 4) * pitch);
+out = ma.tanh(clean * drive);
 };
 
 
 //-----------------------------------`(sy.)clap`---------------------------------------
 // Clap synthesis via filtered white noise.
-// 
-// #### Usage 
-// 
+//
+// #### Usage
+//
 // ```
 // clap(tone, attack, decay, gate) : _
 // ```
@@ -275,19 +275,19 @@ with {
 //-------------------------------------------------------------------------------------
 clap(tone, attack, decay, gate) = out
 with {
-    e1 = en.adsr(0.035 + attack, 0.06 + decay, 0.0, 0.1, gate);
-    e2 = en.adsr(0.025 + attack, 0.05 + decay, 0.0, 0.1, gate);
-    e3 = en.adsr(0.015 + attack, 0.04 + decay, 0.0, 0.1, gate);
-    e4 = en.adsr(0.005 + attack, 0.02 + decay, 0.0, 0.1, gate);
-    out = ma.tanh(((e1 + e2 + e3 + e4) * no.noise) : fi.resonlp(tone, 1.214, 1));
+e1 = en.adsr(0.035 + attack, 0.06 + decay, 0.0, 0.1, gate);
+e2 = en.adsr(0.025 + attack, 0.05 + decay, 0.0, 0.1, gate);
+e3 = en.adsr(0.015 + attack, 0.04 + decay, 0.0, 0.1, gate);
+e4 = en.adsr(0.005 + attack, 0.02 + decay, 0.0, 0.1, gate);
+out = ma.tanh(((e1 + e2 + e3 + e4) * no.noise) : fi.resonlp(tone, 1.214, 1));
 };
 
 
 //-----------------------------------`(sy.)hat`---------------------------------------
 // Hi hat drum synthesis via phase modulation.
-// 
-// #### Usage 
-// 
+//
+// #### Usage
+//
 // ```
 // hat(pitch, tone, attack, decay, gate): _
 // ```
@@ -306,16 +306,16 @@ with {
 //-------------------------------------------------------------------------------------
 hat(pitch, tone, attack, decay, gate) = out
 with {
-    m2 = no.noise;
-    m1 = cycle(2 * pitch, 2 * m2);
-    m0 = cycle(pitch, 2 * m1);
-    f = m0 : fi.resonlp(tone, 1.214, 1);
-    env = en.adsr(attack, decay, 0.0, 0.1, gate);  
-    out = f * env;  
-    cycle(freq, offset) = sin(2 * ma.PI * p)
-    with {
-        t = phasor(freq) + offset;
-        p = t - floor(t);
-        phasor(f) = f/ma.SR : (+ : decimalpart) ~ _ with { decimalpart(x) = x-int(x); };
-    };
+m2 = no.noise;
+m1 = cycle(2 * pitch, 2 * m2);
+m0 = cycle(pitch, 2 * m1);
+f = m0 : fi.resonlp(tone, 1.214, 1);
+env = en.adsr(attack, decay, 0.0, 0.1, gate);
+out = f * env;
+cycle(freq, offset) = sin(2 * ma.PI * p)
+with {
+t = phasor(freq) + offset;
+p = t - floor(t);
+phasor(f) = f/ma.SR : (+ : decimalpart) ~ _ with { decimalpart(x) = x-int(x); };
+};
 };

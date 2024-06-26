@@ -2,8 +2,8 @@
 
 // This library allows to build linear, explicit finite difference schemes
 // physical models in 1 or 2 dimensions using an approach based on the cellular
-// automata formalism. Its official prefix is `fd`. 
-// 
+// automata formalism. Its official prefix is `fd`.
+//
 // In order to use the library, one needs to discretize the linear partial
 // differential equation of the desired system both at boundaries and in-between
 // them, thus obtaining a set of explicit recursion relations. Each one
@@ -37,9 +37,9 @@
 // * <https://github.com/grame-cncm/faustlibraries/blob/master/fds.lib>
 //#############################################################################
 
-ba = library("basics.lib");
-si = library("signals.lib");
-ma = library("maths.lib");
+ba = library("pkg:faust/faust/basics.lib@1.18.0");
+si = library("pkg:faust/faust/signals.lib@1.5.0");
+ma = library("pkg:faust/faust/maths.lib@2.8.0");
 
 declare name "Faust Finite Difference Schemes Library";
 declare version "1.1.0";
@@ -48,12 +48,12 @@ declare author "Romain Michon";
 
 /*
 TODO:
-  - In case of big 2-D meshes the generated c++ code is too long, making the
-    compiler crash. Consider introducing data structures support.
-  - Implement a way to set nonzero initial conditions.
-  - It would be nice to set the length of a mesh directly in meters and not
-    in points.
-  - Cubic interpolators.
+- In case of big 2-D meshes the generated c++ code is too long, making the
+compiler crash. Consider introducing data structures support.
+- Implement a way to set nonzero initial conditions.
+- It would be nice to set the length of a mesh directly in meters and not
+in points.
+- Cubic interpolators.
 */
 
 //===============================Model Construction=============================
@@ -85,7 +85,7 @@ TODO:
 // * `scheme`: coefficients scheme
 //------------------------------------------------------------------------------
 model1D(points,R,T,scheme) =
-    (route1D(points,R,T,scheme) : buildScheme1D(points,R,T)) ~ si.bus(points);
+(route1D(points,R,T,scheme) : buildScheme1D(points,R,T)) ~ si.bus(points);
 
 //--------------------------------`(fd.)model2D`-------------------------------
 // This function can be used to obtain a physical model in 2 dimension.
@@ -113,8 +113,8 @@ model1D(points,R,T,scheme) =
 // * `scheme`: coefficients scheme
 //------------------------------------------------------------------------------
 model2D(pointsX,pointsY,R,T,scheme) =
-    (route2D(pointsX,pointsY,R,T,scheme) :
-        buildScheme2D(pointsX,pointsY,R,T)) ~ si.bus(pointsX*pointsY);
+(route2D(pointsX,pointsY,R,T,scheme) :
+buildScheme2D(pointsX,pointsY,R,T)) ~ si.bus(pointsX*pointsY);
 
 //===============================Interpolation=================================
 // Interpolation functions can be used to drive the input signals to the
@@ -163,8 +163,8 @@ stairsInterp1D(points,point) = par(i,points,_*select2(i==point,0,1));
 // * `pointY`: vertical index of the desired nonzero signal
 //------------------------------------------------------------------------------
 stairsInterp2D(pointsX,pointsY,pointX,pointY) =
-    par(i,pointsX,
-        par(j,pointsY,_*select2((i==pointX) & (j==pointY),0,1)));
+par(i,pointsX,
+par(j,pointsY,_*select2((i==pointX) & (j==pointY),0,1)));
 
 //-----------------------------`(fd.)linInterp1D`---------------------------
 // Linear interpolator in 1 dimension. Takes a number of signals and outputs
@@ -186,10 +186,10 @@ stairsInterp2D(pointsX,pointsY,pointX,pointY) =
 // * `point`: floating point index
 //------------------------------------------------------------------------------
 linInterp1D(points,point) = par(i,points,_*select2(
-        i==int(point), select2(i==int(point+1),0,fraction),(1-fraction)))
+i==int(point), select2(i==int(point+1),0,fraction),(1-fraction)))
 with
 {
-    fraction = ma.frac(point);
+fraction = ma.frac(point);
 };
 
 //-----------------------------`(fd.)linInterp2D`---------------------------
@@ -211,22 +211,22 @@ with
 //------------------------------------------------------------------------------
 linInterp2D(pointsX,pointsY,pointX,pointY) =
 par(i,pointsX,
-    par(j,pointsY,_*
-        select2((i==intX) & (j==intY),
-            select2((i==(intX+1)) & (j==intY),
-                select2((i==intX) & (j==(intY+1)),
-                    select2((i==(intX+1)) & (j==(intY+1)),
-                        0,
-                        fractionX*fractionY),
-                    (1-fractionX)*fractionY),
-                fractionX*(1-fractionY)),
-            (1-fractionX)*(1-fractionY))))
+par(j,pointsY,_*
+select2((i==intX) & (j==intY),
+select2((i==(intX+1)) & (j==intY),
+select2((i==intX) & (j==(intY+1)),
+select2((i==(intX+1)) & (j==(intY+1)),
+0,
+fractionX*fractionY),
+(1-fractionX)*fractionY),
+fractionX*(1-fractionY)),
+(1-fractionX)*(1-fractionY))))
 with
 {
-    fractionX = ma.frac(pointX);
-    fractionY = ma.frac(pointY);
-    intX = int(pointX);
-    intY = int(pointY);
+fractionX = ma.frac(pointX);
+fractionY = ma.frac(pointY);
+intX = int(pointX);
+intY = int(pointY);
 };
 
 //---------------------------`(fd.)stairsInterp1DOut`--------------------------
@@ -263,7 +263,7 @@ stairsInterp1DOut(points,point) = ba.selectn(points,point);
 // * `pointY`: vertical index of the desired nonzero signal
 //------------------------------------------------------------------------------
 stairsInterp2DOut(pointsX,pointsY,pointX,pointY) =
-    ba.selectn(pointsX*pointsY,pointY+pointX*Y);
+ba.selectn(pointsX*pointsY,pointY+pointX*Y);
 
 //---------------------------`(fd.)linInterp1DOut`--------------------------
 // Linear interpolator in 1 dimension. Similar to `stairsInterp1D`, except it
@@ -299,7 +299,7 @@ linInterp1DOut(points,point) = linInterp1D(points,point):>_;
 // * `pointY`: vertical float index
 //------------------------------------------------------------------------------
 linInterp2DOut(pointsX,pointsY,pointX,pointY) =
-    linInterp2D(pointsX,pointsY,pointX,pointY):>_;
+linInterp2D(pointsX,pointsY,pointX,pointY):>_;
 
 //====================================Routing==================================
 // The routing functions are used internally by the model building functions,
@@ -328,19 +328,19 @@ linInterp2DOut(pointsX,pointsY,pointX,pointY) =
 // * `T`: time coefficient
 //------------------------------------------------------------------------------
 route1D(points, R, T) = route(points*2+points*nCoeffs, points*nInputs,
-                                par(x, points, connections(x)))
+par(x, points, connections(x)))
 with
 {
-    connections(x) =  par(k,nCoeffs,x*nCoeffs+k+1,C(x,k+1)),
-                      P(x) + points, C(x,0),
-                      par(i, nNeighbors, P(x),C(x-R+i,nInputs-1-i));
+connections(x) =  par(k,nCoeffs,x*nCoeffs+k+1,C(x,k+1)),
+P(x) + points, C(x,0),
+par(i, nNeighbors, P(x),C(x-R+i,nInputs-1-i));
 
-    P(x) = x+1 + nCoeffs*points;
-    C(x,count) = (1 + count + (x*nInputs)) * (x>=0) * (x<points);
+P(x) = x+1 + nCoeffs*points;
+C(x,count) = (1 + count + (x*nInputs)) * (x>=0) * (x<points);
 
-    nNeighbors = 2*R+1;
-    nCoeffs = nNeighbors*(T+1);
-    nInputs = nNeighbors+1+nCoeffs;
+nNeighbors = 2*R+1;
+nCoeffs = nNeighbors*(T+1);
+nInputs = nNeighbors+1+nCoeffs;
 };
 
 //--------------------------------`(fd.)route2D`-------------------------------
@@ -362,26 +362,26 @@ with
 // * `T`: time coefficient
 //------------------------------------------------------------------------------
 route2D(pointsX, pointsY, R, T) =
-    route(nPoints*2+nPoints*nCoeffs, nPoints*nInputs,
-        par(x, pointsX, par(y, pointsY, connections(x,y))))
+route(nPoints*2+nPoints*nCoeffs, nPoints*nInputs,
+par(x, pointsX, par(y, pointsY, connections(x,y))))
 with
 {
-    connections(x,y) =
-        P(x,y) + nPoints, C(x,y,0),
-        par(k,nCoeffs,(x*pointsY+y)*nCoeffs+k+1,C(x,y,k+1)),
-        par(j,nNeighborsXY,
-        par(i,nNeighborsXY,
-            P(x,y),C(x+i-R,y+j-R,nInputs-1-(i*nNeighborsXY+j))));
+connections(x,y) =
+P(x,y) + nPoints, C(x,y,0),
+par(k,nCoeffs,(x*pointsY+y)*nCoeffs+k+1,C(x,y,k+1)),
+par(j,nNeighborsXY,
+par(i,nNeighborsXY,
+P(x,y),C(x+i-R,y+j-R,nInputs-1-(i*nNeighborsXY+j))));
 
-    P(x,y) = x*pointsY+y+1 + nCoeffs*nPoints;
-    C(x,y,count) = (1 + count + (x*pointsY+y)*nInputs)
-                      * (x>=0) * (x<pointsX) * (y>=0) * (y<pointsY);
+P(x,y) = x*pointsY+y+1 + nCoeffs*nPoints;
+C(x,y,count) = (1 + count + (x*pointsY+y)*nInputs)
+* (x>=0) * (x<pointsX) * (y>=0) * (y<pointsY);
 
-    nNeighborsXY = 2*R+1;
-    nNeighbors = nNeighborsXY^2;
-    nCoeffs = nNeighbors*(T+1);
-    nInputs = nNeighbors+1+nCoeffs;
-    nPoints = pointsX*pointsY;
+nNeighborsXY = 2*R+1;
+nNeighbors = nNeighborsXY^2;
+nCoeffs = nNeighbors*(T+1);
+nInputs = nNeighbors+1+nCoeffs;
+nPoints = pointsX*pointsY;
 };
 
 //================================Scheme Operations=============================
@@ -413,15 +413,15 @@ with
 schemePoint(R,T,D) = routing:operations:>_
 with
 {
-    nNeighbors = (2*R+1)^D;
-    routing =
-        route(nNeighbors*(T+1)+nNeighbors+1,2*nNeighbors*(T+1)+1,
-            (1,1),
-            par(t,T+1,
-                par(i,nNeighbors,i+t*nNeighbors+2,2*(i+t*nNeighbors)+3,
-                                i+nNeighbors*(T+1)+2,2*(i+t*nNeighbors)+2)));
-    operations = _,par(t,T+1,
-                    par(i,nNeighbors,(_@t),_:*));
+nNeighbors = (2*R+1)^D;
+routing =
+route(nNeighbors*(T+1)+nNeighbors+1,2*nNeighbors*(T+1)+1,
+(1,1),
+par(t,T+1,
+par(i,nNeighbors,i+t*nNeighbors+2,2*(i+t*nNeighbors)+3,
+i+nNeighbors*(T+1)+2,2*(i+t*nNeighbors)+2)));
+operations = _,par(t,T+1,
+par(i,nNeighbors,(_@t),_:*));
 };
 
 //------------------------------`(fd.)buildScheme1D`---------------------------
@@ -442,7 +442,7 @@ with
 // * `T`: time coefficient
 //------------------------------------------------------------------------------
 buildScheme1D(points,R,T) =
-    par (x, points,schemePoint(R,T,1));
+par (x, points,schemePoint(R,T,1));
 
 //------------------------------`(fd.)buildScheme2D`---------------------------
 // This function is used to stack in parallel several schemePoint functions in
@@ -463,8 +463,8 @@ buildScheme1D(points,R,T) =
 // * `T`: time coefficient
 //------------------------------------------------------------------------------
 buildScheme2D(pointsX,pointsY,R,T) =
-    par (x, pointsX,
-        par(y,pointsY, schemePoint(R,T,2)));
+par (x, pointsX,
+par(y,pointsY, schemePoint(R,T,2)));
 
 //================================Interaction Models============================
 // Here are defined two physically based interaction algorithms: a hammer and
@@ -499,15 +499,15 @@ buildScheme2D(pointsX,pointsY,R,T) =
 // * `fIn`: hammer excitation signal (i.e. a button)
 //------------------------------------------------------------------------------
 hammer(coeff,omega0Sqr,sigma0,kH,alpha,k,offset,fIn) =
-    (hammerForce<:hammerModel(fIn,k,offset,_),_)~_:!,_*coeff
+(hammerForce<:hammerModel(fIn,k,offset,_),_)~_:!,_*coeff
 with
 {
-    hammerModel(in,k,offset) =
-        (_,_,_*forceCoeff,in :> _) ~ (_ <: A*_,B*_') :_-offset;
-    hammerForce(uh,u)=select2((uh-u)>0,0,((uh-u)^alpha)*(-kH));
-    A = (2-omega0Sqr^2*k^2)/(1+sigma0*k);
-    B = (-1)*(1-sigma0*k)/(1+sigma0*k);
-    forceCoeff = k^2/(1+sigma0*k);
+hammerModel(in,k,offset) =
+(_,_,_*forceCoeff,in :> _) ~ (_ <: A*_,B*_') :_-offset;
+hammerForce(uh,u)=select2((uh-u)>0,0,((uh-u)^alpha)*(-kH));
+A = (2-omega0Sqr^2*k^2)/(1+sigma0*k);
+B = (-1)*(1-sigma0*k)/(1+sigma0*k);
+forceCoeff = k^2/(1+sigma0*k);
 };
 
 //---------------------------------`(fd.)bow`-------------------------------
@@ -530,6 +530,6 @@ with
 bow(coeff,alpha,k,vb) = _:phi*(-coeff)
 with
 {
-    phi(u) = 1.41*alpha*dVel(u)*exp(-alpha*dVel(u)*dVel(u)+0.5);
-    dVel(x) = select2(vb==0,(x-x')/k - vb,0);
+phi(u) = 1.41*alpha*dVel(u)*exp(-alpha*dVel(u)*dVel(u)+0.5);
+dVel(x) = select2(vb==0,(x-x')/k - vb,0);
 };

@@ -37,9 +37,9 @@ closed source license or any other license if you decide so.
 ************************************************************************
 ************************************************************************/
 
-ba = library("basics.lib");
-si = library("signals.lib");
-sp = library("spats.lib");
+ba = library("pkg:faust/faust/basics.lib@1.18.0");
+si = library("pkg:faust/faust/signals.lib@1.5.0");
+sp = library("pkg:faust/faust/spats.lib@1.1.0");
 
 declare name "Faust Signal Routing Library";
 declare version "1.2.0";
@@ -249,14 +249,14 @@ recursivize(p,q) = (_,_,_,_ :> sp.stereoize(p)) ~ sp.stereoize(q);
 //------------------------------------------------------------------------------
 declare bubbleSort author "Dario Sanfilippo";
 declare bubbleSort copyright "Copyright (C) 2021 Dario Sanfilippo
-    <sanfilippo.dario@gmail.com>";
+<sanfilippo.dario@gmail.com>";
 declare bubbleSort license "MIT License";
 bubbleSort(0) = 0 : !;
 bubbleSort(1) = _;
 bubbleSort(N) = seq(i, N - 1, pairSortN(N - i), bus(i))
-    with {
-        bus(0) = 0 : !;
-        bus(N) = si.bus(N);
-        pairSort = bus(2) <: select2(>), select2(<);
-        pairSortN(N) = seq(i, N - 1, bus(i), pairSort, bus(N - i - 2));
-    };
+with {
+bus(0) = 0 : !;
+bus(N) = si.bus(N);
+pairSort = bus(2) <: select2(>), select2(<);
+pairSortN(N) = seq(i, N - 1, bus(i), pairSort, bus(N - i - 2));
+};

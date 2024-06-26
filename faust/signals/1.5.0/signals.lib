@@ -42,10 +42,10 @@ closed source license or any other license if you decide so.
 ************************************************************************
 ************************************************************************/
 
-ba = library("basics.lib");
-ro = library("routes.lib");
-ma = library("maths.lib");
-si = library("signals.lib");
+ba = library("pkg:faust/faust/basics.lib@1.18.0");
+ro = library("pkg:faust/faust/routes.lib@unknown");
+ma = library("pkg:faust/faust/maths.lib@2.8.0");
+si = library("pkg:faust/faust/signals.lib@1.5.0");
 
 declare name "Faust Signal Routing Library";
 declare version "1.5.0";
@@ -85,7 +85,7 @@ bus(N) = par(i, N, _);
 //
 // Where:
 //
-// * `N`: the number of signals to be blocked known at compile time 
+// * `N`: the number of signals to be blocked known at compile time
 //--------------------------------------
 block(N) = par(i, N, !);
 
@@ -102,7 +102,7 @@ block(N) = par(i, N, !);
 //
 // * `i`: interpolation control between 0 and 1 (0: first input; 1: second input)
 //-----------------------------------------------------------------------------
-interpolate(i,x,y) = x + i*(y-x);  
+interpolate(i,x,y) = x + i*(y-x);
 
 //---------------`(si.)repeat`----------------------------------------------
 // Repeat an effect N time(s) and take the parallel sum of all
@@ -119,7 +119,7 @@ interpolate(i,x,y) = x + i*(y-x);
 //
 // Where:
 //
-// * `N`: Number of repetitions, minimum of 1, a constant numerical expression 
+// * `N`: Number of repetitions, minimum of 1, a constant numerical expression
 // * `FX`: an arbitrary effect (N inputs and N outputs) that will be repeated
 //
 // Example 1:
@@ -140,7 +140,7 @@ declare repeat author "Yann Orlarey and Stéphane Letz, revised by David Braun";
 repeat(1, FX) = FX;
 repeat(n, FX) = FX <: si.bus(N), repeat(n-1, FX) :> si.bus(N)
 with {
-    N = outputs(FX);
+N = outputs(FX);
 };
 
 //------------------------`(si.)smoo`---------------------------------------
@@ -210,8 +210,8 @@ smoothAndH(t,s) = si.smooth(s*t) : ba.sAndH(t);
 //-----------------------------------------------------------------------
 bsmooth(c) = +(i) ~ _
 with {
-    i = (c-c@n)/n;
-    n = min(4096, max(1, ma.BS));
+i = (c-c@n)/n;
+n = min(4096, max(1, ma.BS));
 };
 
 //-------------------------------`(si.)dot`--------------------------------------
@@ -277,19 +277,19 @@ Michon and Julius O. Smith III, and are released under the
 
 // See [grame-cncm/faustlibraries]: Minor improvement to si.smoo. (Discussion #106)
 
-smooth_imp = case { 
-  // y[n] = (1 - s) * x[n] + s * y[n - 1]
-  (0,s) => \(x).(fb ~ _ with { fb(y) = (1.0 - s) * x + s * y; });
-  
-  // y[n] = s * (y[n - 1] - x[n]) + x[n]
-  (1,s) => \(x).(fb ~ _ with { fb(y) = s * (y - x) + x; });
-  
-  // y[n] = y[n - 1] + (1 - s) * (x[n] - y[n - 1])
-  (2,s) => \(x).(fb ~ _ with { fb(y) = y + (1.0 - s) * (x - y); });
+smooth_imp = case {
+// y[n] = (1 - s) * x[n] + s * y[n - 1]
+(0,s) => \(x).(fb ~ _ with { fb(y) = (1.0 - s) * x + s * y; });
+
+// y[n] = s * (y[n - 1] - x[n]) + x[n]
+(1,s) => \(x).(fb ~ _ with { fb(y) = s * (y - x) + x; });
+
+// y[n] = y[n - 1] + (1 - s) * (x[n] - y[n - 1])
+(2,s) => \(x).(fb ~ _ with { fb(y) = y + (1.0 - s) * (x - y); });
 };
 
 // The best compromise on modern CPUs where two independent multiplications can be done in parallel.
-// Other versions could possibly be faster on embedded devices. 
+// Other versions could possibly be faster on embedded devices.
 smooth = smooth_imp(0);
 
 
@@ -310,37 +310,37 @@ smooth = smooth_imp(0);
 declare smoothq author "Andrew John March";
 declare smoothq licence "STK-4.3";
 
-smoothq(time, q, tar) = envelope 
-    with {
-        ratio = pow(q, 5) * 32 : max(0.001);
-        coef = (ratio / (1 + ratio))^(1 / (ma.SR * time));
-        fb(cBase, cTar, cSrc, cDistance, cDir, cY, cOut) = base, tar, src, distance, dir, y, out
-            with {
-                trig = cTar != tar;
-                src = select2(trig, cSrc, cOut);
-                dir = select2(trig, cDir, tar > src);
-                base = select2(trig, cBase, select2(dir,
-                    (0.0 - ratio) * (1.0 - coef),
-                    (1.0 + ratio) * (1.0 - coef)
-                ));
-                distance = select2(trig, cDistance, abs(tar - src));
-                y = select2(dir,
-                    select2(trig, 
-                        max( 0, base + cY * coef),
-                        1
-                    ),
-                    select2(trig,
-                        min( 1, base + cY * coef),
-                        0
-                    )
-                );
-                out = select2(dir,
-                    tar + y * distance,
-                    src + y * distance
-                );
-            };
-        envelope = fb ~ (_,_,_,_,_,_,_) : !,!,!,!,!,!,_;
-    };
+smoothq(time, q, tar) = envelope
+with {
+ratio = pow(q, 5) * 32 : max(0.001);
+coef = (ratio / (1 + ratio))^(1 / (ma.SR * time));
+fb(cBase, cTar, cSrc, cDistance, cDir, cY, cOut) = base, tar, src, distance, dir, y, out
+with {
+trig = cTar != tar;
+src = select2(trig, cSrc, cOut);
+dir = select2(trig, cDir, tar > src);
+base = select2(trig, cBase, select2(dir,
+(0.0 - ratio) * (1.0 - coef),
+(1.0 + ratio) * (1.0 - coef)
+));
+distance = select2(trig, cDistance, abs(tar - src));
+y = select2(dir,
+select2(trig,
+max( 0, base + cY * coef),
+1
+),
+select2(trig,
+min( 1, base + cY * coef),
+0
+)
+);
+out = select2(dir,
+tar + y * distance,
+src + y * distance
+);
+};
+envelope = fb ~ (_,_,_,_,_,_,_) : !,!,!,!,!,!,_;
+};
 
 
 //--------------------------------`(si.)cbus`-------------------------------------
@@ -417,7 +417,7 @@ released under LGPL, STK-4.3, MIT, BSD, or a similar FOSS license.
 // ```
 // _ : onePoleSwitching(att,rel) : _
 // ```
-// 
+//
 // Where:
 //
 // * `att`: the attack tau time constant in second
@@ -428,13 +428,13 @@ declare onePoleSwitching author "Jonatan Liljedahl, revised by Dario Sanfilippo"
 declare onePoleSwitching licence "STK-4.3";
 
 onePoleSwitching(att, rel, x) = loop ~ _
-    with {
-        loop(yState) = (1.0 - coeff) * x + coeff * yState
-            with {
-                coeff = ba.if(x > yState, ba.tau2pole(att), ba.tau2pole(rel));
-            };
-    };
-    
+with {
+loop(yState) = (1.0 - coeff) * x + coeff * yState
+with {
+coeff = ba.if(x > yState, ba.tau2pole(att), ba.tau2pole(rel));
+};
+};
+
 // Kept for backward compatibility
 lag_ud = onePoleSwitching;
 
@@ -457,9 +457,9 @@ lag_ud = onePoleSwitching;
 //----------------------------------------------------
 declare rev author "Yann Orlarey";
 
-rev(n) = @(phase(n)*2) 
+rev(n) = @(phase(n)*2)
 with {
-    phase(n) = 1 : (+ : %(n)) ~ _ : max(0) : min(n-1);
+phase(n) = 1 : (+ : %(n)) ~ _ : max(0) : min(n-1);
 };
 
 //--------------------`(si.)vecOp`----------------------------------------------
@@ -467,9 +467,9 @@ with {
 // This function is a generalisation of Faust's iterators such as `prod` and
 // `sum`, and it allows to perform operations on an arbitrary number of
 // vectors, provided that they all have the same length. Unlike Faust's
-// iterators `prod` and `sum` where the vector size is equal to one and the 
-// vector space dimension must be specified by the user, this function will 
-// infer the vector space dimension and vector size based on the vectors list 
+// iterators `prod` and `sum` where the vector size is equal to one and the
+// vector space dimension must be specified by the user, this function will
+// infer the vector space dimension and vector size based on the vectors list
 // that we provide.
 //
 // The outputs of the function are equal to the vector size, whereas the
@@ -478,7 +478,7 @@ with {
 // clarifying example later; in general, the number of total inputs will
 // be the sum of the inputs in each input vector.
 //
-// Note that we must provide a list of at least two vectors, each with a size 
+// Note that we must provide a list of at least two vectors, each with a size
 // that is greater or equal to one.
 //
 // #### Usage
@@ -505,10 +505,10 @@ with {
 // combined or processed individually.
 //
 // If we do:
-// 
+//
 //      process = vecOp(v0, +);
 //
-// the function will deduce a vector space of dimension equal to four and 
+// the function will deduce a vector space of dimension equal to four and
 // a vector length equal to one. Note that this is equivalent to writing:
 //
 //      process = v0 : sum(i, 4, _);
@@ -517,7 +517,7 @@ with {
 //
 //      process = vecOp((v0 , v1), *) :> _;
 //
-// and we have a dimension-two space and length-four vectors. This is the dot 
+// and we have a dimension-two space and length-four vectors. This is the dot
 // product between vectors v0 and v1, which is equivalent to writing:
 //
 //      process = v0 , v1 : dot(4);
@@ -535,9 +535,9 @@ with {
 //
 //      process = vecOp(vv, &);
 //
-// to perform the bitwise AND on all the elements at the same position in 
+// to perform the bitwise AND on all the elements at the same position in
 // each vector, having dimension equal to the vector length equal to four.
-// 
+//
 // Or even:
 //
 //      process = vecOp((vv , vv), &);
@@ -551,20 +551,20 @@ with {
 //      normalisation = 1.0 / sqrt(N);
 //      coeffVec = par(i, N, .99 * normalisation);
 //      delVec = par(i, N, (i + 1) * 3);
-//      process = vecOp((si.bus(N) , si.bus(N)), +) ~ 
+//      process = vecOp((si.bus(N) , si.bus(N)), +) ~
 //          vecOp((vecOp((ro.hadamard(N) , coeffVec), *) , delVec), @);
 //
 //------------------------------------------------------------------------------
 declare vecOp author "Dario Sanfilippo";
 declare vecOp copyright "Copyright (C) 2022 Dario Sanfilippo
-      <sanfilippo.dario@gmail.com>";
+<sanfilippo.dario@gmail.com>";
 declare vecOp license "MIT License";
 vecOp(vectorsList, op) =
-    vectorsList : seq(i, vecDim - 1, vecOp2D , vecBus(vecDim - 2 - i))
-    with {
-        vecBus(0) = par(i, vecLen, 0 : !);
-        vecBus(dim) = par(i, dim, si.bus(vecLen));
-        vecOp2D = ro.interleave(vecLen, 2) : par(i, vecLen, op);
-        vecDim = outputs(vectorsList) / vecLen;
-        vecLen = outputs(ba.take(1, vectorsList));
-    };
+vectorsList : seq(i, vecDim - 1, vecOp2D , vecBus(vecDim - 2 - i))
+with {
+vecBus(0) = par(i, vecLen, 0 : !);
+vecBus(dim) = par(i, dim, si.bus(vecLen));
+vecOp2D = ro.interleave(vecLen, 2) : par(i, vecLen, op);
+vecDim = outputs(vectorsList) / vecLen;
+vecLen = outputs(ba.take(1, vectorsList));
+};

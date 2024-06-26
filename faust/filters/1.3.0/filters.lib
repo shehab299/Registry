@@ -33,17 +33,17 @@
 
 // NOTE ABOUT LICENSES:
 // Each function in this library has its own license. Licenses are declared
-// before each function. Corresponding license terms can be found at the 
+// before each function. Corresponding license terms can be found at the
 // bottom of this file or in the Faust libraries documentation.
 
-ma = library("maths.lib");
-ba = library("basics.lib");
-ro = library("routes.lib");
-de = library("delays.lib");
-an = library("analyzers.lib");
-ef = library("misceffects.lib");
-si = library("signals.lib");
-fi = library("filters.lib"); // for compatible copy/paste out of this file
+ma = library("pkg:faust/faust/maths.lib@2.8.0");
+ba = library("pkg:faust/faust/basics.lib@1.18.0");
+ro = library("pkg:faust/faust/routes.lib@unknown");
+de = library("pkg:faust/faust/delays.lib@1.1.0");
+an = library("pkg:faust/faust/analyzers.lib@1.2.0");
+ef = library("pkg:faust/faust/misceffects.lib@2.5.0");
+si = library("pkg:faust/faust/signals.lib@1.5.0");
+fi = library("pkg:faust/faust/filters.lib@1.3.0");
 
 declare name "Faust Filters Library";
 declare version "1.3.0";
@@ -130,9 +130,9 @@ declare dcblockerat copyright "Copyright (C) 2003-2019 by Julius O. Smith III <j
 declare dcblockerat license "MIT-style STK-4.3 license";
 dcblockerat(fb) = *(b0) : zero(1) : pole(p)
 with {
-  wn = ma.PI*fb/ma.SR;
-  b0 = 1.0 / (1 + wn);
-  p = (1 - wn) * b0;
+wn = ma.PI*fb/ma.SR;
+b0 = 1.0 / (1 + wn);
+p = (1 - wn) * b0;
 };
 
 //----------------------`(fi.)dcblocker`--------------------------
@@ -508,8 +508,8 @@ declare fir author "Julius O. Smith III";
 declare fir copyright "Copyright (C) 2003-2019 by Julius O. Smith III <jos@ccrma.stanford.edu>";
 declare fir license "MIT-style STK-4.3 license";
 fir((b0,bv)) = _ <: *(b0), R(1,bv) :> _ with {
-	R(n,(bn,bv)) = (@(n):*(bn)), R(n+1,bv);
-	R(n, bn)     = (@(n):*(bn)); };
+R(n,(bn,bv)) = (@(n):*(bn)), R(n+1,bv);
+R(n, bn)     = (@(n):*(bn)); };
 fir(b0) = *(b0);
 
 //---------------`(fi.)conv` and `(fi.)convN`-------------------------------
@@ -574,9 +574,9 @@ tf3(b0,b1,b2,b3,a1,a2,a3) = iir((b0,b1,b2,b3),(a1,a2,a3));
 // use tf2 instead
 TF2(b0,b1,b2,a1,a2) = sub ~ conv2(a1,a2) : conv3(b0,b1,b2)
 with {
-	conv3(k0,k1,k2,x) = k0*x + k1*x' + k2*x'';
-	conv2(k0,k1,x)    = k0*x + k1*x';
-	sub(x,y)          = y-x;
+conv3(k0,k1,k2,x) = k0*x + k1*x' + k2*x'';
+conv2(k0,k1,x)    = k0*x + k1*x';
+sub(x,y)          = y-x;
 };
 
 //------------`(fi.)notchw`--------------
@@ -602,18 +602,18 @@ declare notchw copyright "Copyright (C) 2003-2019 by Julius O. Smith III <jos@cc
 declare notchw license "MIT-style STK-4.3 license";
 notchw(width,freq) = tf2(b0,b1,b2,a1,a2)
 with {
-  fb = 0.5*width; // First design a dcblockerat(width/2)
-  wn = ma.PI*fb/ma.SR;
-  b0db = 1.0 / (1 + wn);
-  p = (1 - wn) * b0db; // This is our pole radius.
-  // Now place unit-circle zeros at desired angles:
-  tn = 2*ma.PI*freq/ma.SR;
-  a2 = p * p;
-  a2p1 = 1+a2;
-  a1 = -a2p1*cos(tn);
-  b1 = a1;
-  b0 = 0.5*a2p1;
-  b2 = b0;
+fb = 0.5*width; // First design a dcblockerat(width/2)
+wn = ma.PI*fb/ma.SR;
+b0db = 1.0 / (1 + wn);
+p = (1 - wn) * b0db; // This is our pole radius.
+// Now place unit-circle zeros at desired angles:
+tn = 2*ma.PI*freq/ma.SR;
+a2 = p * p;
+a2p1 = 1+a2;
+a1 = -a2p1*cos(tn);
+b1 = a1;
+b0 = 0.5*a2p1;
+b2 = b0;
 };
 
 //======================Direct-Form Second-Order Biquad Sections==========================
@@ -652,28 +652,28 @@ declare tf21 author "Julius O. Smith III";
 declare tf21 copyright "Copyright (C) 2003-2019 by Julius O. Smith III <jos@ccrma.stanford.edu>";
 declare tf21 license "MIT-style STK-4.3 license";
 tf21(b0,b1,b2,a1,a2) = // tf2, direct-form 1:
-    _ <:(mem<:((mem:*(b2)),*(b1))),*(b0) :>_
-    : ((_,_,_:>_) ~(_<:*(-a1),(mem:*(-a2))));
-    
+_ <:(mem<:((mem:*(b2)),*(b1))),*(b0) :>_
+: ((_,_,_:>_) ~(_<:*(-a1),(mem:*(-a2))));
+
 declare tf22 author "Julius O. Smith III";
 declare tf22 copyright "Copyright (C) 2003-2019 by Julius O. Smith III <jos@ccrma.stanford.edu>";
 declare tf22 license "MIT-style STK-4.3 license";
 tf22(b0,b1,b2,a1,a2) = // tf2, direct-form 2:
-    _ : (((_,_,_:>_)~*(-a1)<:mem,*(b0))~*(-a2))
-      : (_<:mem,*(b1)),_ : *(b2),_,_ :> _;
+_ : (((_,_,_:>_)~*(-a1)<:mem,*(b0))~*(-a2))
+: (_<:mem,*(b1)),_ : *(b2),_,_ :> _;
 
 declare tf22t author "Julius O. Smith III";
 declare tf22t copyright "Copyright (C) 2003-2019 by Julius O. Smith III <jos@ccrma.stanford.edu>";
 declare tf22t license "MIT-style STK-4.3 license";
 tf22t(b0,b1,b2,a1,a2) = // tf2, direct-form 2 transposed:
-    _ : (_,_,(_ <: *(b2)',*(b1)',*(b0))
-      : _,+',_,_ :> _)~*(-a1)~*(-a2) : _;
+_ : (_,_,(_ <: *(b2)',*(b1)',*(b0))
+: _,+',_,_ :> _)~*(-a1)~*(-a2) : _;
 
 declare tf21t author "Julius O. Smith III";
 declare tf21t copyright "Copyright (C) 2003-2019 by Julius O. Smith III <jos@ccrma.stanford.edu>";
 declare tf21t license "MIT-style STK-4.3 license";
 tf21t(b0,b1,b2,a1,a2) = // tf2, direct-form 1 transposed:
-    tf22t(1,0,0,a1,a2) : tf22t(b0,b1,b2,0,0); // or write it out if you want
+tf22t(1,0,0,a1,a2) : tf22t(b0,b1,b2,0,0); // or write it out if you want
 
 //=========================== Ladder/Lattice Digital Filters =============================
 // Ladder and lattice digital filters generally have superior numerical
@@ -713,13 +713,13 @@ declare av2sv author "Julius O. Smith III";
 declare av2sv copyright "Copyright (C) 2003-2019 by Julius O. Smith III <jos@ccrma.stanford.edu>";
 declare av2sv license "MIT-style STK-4.3 license";
 av2sv(av) = par(i,M,s(i+1)) with {
-  M = ba.count(av);
-  s(m) = sr(M-m+1); // m=1..M
-  sr(m) = Ari(m,M-m+1); // s_{M-1-m}
-  Ari(m,i) = ba.take(i+1,Ar(m-1));
-  //step-down recursion for lattice/ladder digital filters:
-  Ar(0) = (1,av); // Ar(m) is order M-m (i.e. "reverse-indexed")
-  Ar(m) = 1,par(i,M-m, (Ari(m,i+1) - sr(m)*Ari(m,M-m-i))/(1-sr(m)*sr(m)));
+M = ba.count(av);
+s(m) = sr(M-m+1); // m=1..M
+sr(m) = Ari(m,M-m+1); // s_{M-1-m}
+Ari(m,i) = ba.take(i+1,Ar(m-1));
+//step-down recursion for lattice/ladder digital filters:
+Ar(0) = (1,av); // Ar(m) is order M-m (i.e. "reverse-indexed")
+Ar(m) = 1,par(i,M-m, (Ari(m,i+1) - sr(m)*Ari(m,M-m-i))/(1-sr(m)*sr(m)));
 };
 
 //----------------------------`(fi.)bvav2nuv`--------------------------------
@@ -745,17 +745,17 @@ declare bvav2nuv author "Julius O. Smith III";
 declare bvav2nuv copyright "Copyright (C) 2003-2019 by Julius O. Smith III <jos@ccrma.stanford.edu>";
 declare bvav2nuv license "MIT-style STK-4.3 license";
 bvav2nuv(bv,av) = par(m,M+1,nu(m)) with {
-  M = ba.count(av);
-  nu(m) = ba.take(m+1,Pr(M-m)); // m=0..M
-  // lattice/ladder tap parameters:
-  Pr(0) = bv; // Pr(m) is order M-m, 'r' means "reversed"
-  Pr(m) = par(i,M-m+1, (Pri(m,i) - nu(M-m+1)*Ari(m,M-m-i+1)));
-  Pri(m,i) = ba.take(i+1,Pr(m-1));
-  Ari(m,i) = ba.take(i+1,Ar(m-1));
-  //step-down recursion for lattice/ladder digital filters:
-  Ar(0) = (1,av); // Ar(m) is order M-m (recursion index must start at constant)
-  Ar(m) = 1,par(i,M-m, (Ari(m,i+1) - sr(m)*Ari(m,M-m-i))/(1-sr(m)*sr(m)));
-  sr(m) = Ari(m,M-m+1); // s_{M-1-m}
+M = ba.count(av);
+nu(m) = ba.take(m+1,Pr(M-m)); // m=0..M
+// lattice/ladder tap parameters:
+Pr(0) = bv; // Pr(m) is order M-m, 'r' means "reversed"
+Pr(m) = par(i,M-m+1, (Pri(m,i) - nu(M-m+1)*Ari(m,M-m-i+1)));
+Pri(m,i) = ba.take(i+1,Pr(m-1));
+Ari(m,i) = ba.take(i+1,Ar(m-1));
+//step-down recursion for lattice/ladder digital filters:
+Ar(0) = (1,av); // Ar(m) is order M-m (recursion index must start at constant)
+Ar(m) = 1,par(i,M-m, (Ari(m,i+1) - sr(m)*Ari(m,M-m-i))/(1-sr(m)*sr(m)));
+sr(m) = Ari(m,M-m+1); // s_{M-1-m}
 };
 
 //--------------------`(fi.)iir_lat2`-----------------------
@@ -777,9 +777,9 @@ declare iir_lat2 copyright "Copyright (C) 2003-2019 by Julius O. Smith III <jos@
 declare iir_lat2 license "MIT-style STK-4.3 license";
 iir_lat2(bv,av) = allpassnt(M,sv) : sum(i,M+1,*(ba.take(M-i+1,tg)))
 with {
-  M = ba.count(av);
-  sv = av2sv(av); // sv = vector of sin(theta) reflection coefficients
-  tg = bvav2nuv(bv,av); // tg = vector of tap gains
+M = ba.count(av);
+sv = av2sv(av); // sv = vector of sin(theta) reflection coefficients
+tg = bvav2nuv(bv,av); // tg = vector of tap gains
 };
 
 //-----------------------`(fi.)allpassnt`--------------------------
@@ -802,10 +802,10 @@ declare allpassnt license "MIT-style STK-4.3 license";
 allpassnt(0,sv) = _;
 allpassnt(n,sv) = _ : ((+ <: (allpassnt(n-1,sv),*(s)))~*(-s)) : fsec(n)
 with {
-  fsec(1) = ro.crossnn(1) : _, (_<:mem,_) : +,_;
-  fsec(n) = ro.crossn1(n) : _, (_<:mem,_),par(i,n-1,_) : +, par(i,n,_);
-  innertaps(n) = par(i,n,_);
-  s = ba.take(n,sv); // reflection coefficient s = sin(theta)
+fsec(1) = ro.crossnn(1) : _, (_<:mem,_) : +,_;
+fsec(n) = ro.crossn1(n) : _, (_<:mem,_),par(i,n-1,_) : +, par(i,n,_);
+innertaps(n) = par(i,n,_);
+s = ba.take(n,sv); // reflection coefficient s = sin(theta)
 };
 
 //--------------------`(fi.)iir_kl`-----------------------
@@ -827,13 +827,13 @@ declare iir_kl copyright "Copyright (C) 2003-2019 by Julius O. Smith III <jos@cc
 declare iir_kl license "MIT-style STK-4.3 license";
 iir_kl(bv,av) = allpassnklt(M,sv) : sum(i,M+1,*(tghr(i)))
 with {
-  M = ba.count(av);
-  sv = av2sv(av); // sv = vector of sin(theta) reflection coefficients
-  tg = bvav2nuv(bv,av); // tg = vector of tap gains for 2mul case
-  tgr(i) = ba.take(M+1-i,tg);
-  tghr(n) = tgr(n)/pi(n);
-  pi(0) = 1;
-  pi(n) = pi(n-1)*(1+ba.take(M-n+1,sv)); // all sign parameters '+'
+M = ba.count(av);
+sv = av2sv(av); // sv = vector of sin(theta) reflection coefficients
+tg = bvav2nuv(bv,av); // tg = vector of tap gains for 2mul case
+tgr(i) = ba.take(M+1-i,tg);
+tghr(n) = tgr(n)/pi(n);
+pi(0) = 1;
+pi(n) = pi(n-1)*(1+ba.take(M-n+1,sv)); // all sign parameters '+'
 };
 
 //-----------------------`(fi.)allpassnklt`--------------------------
@@ -855,12 +855,12 @@ declare allpassnklt copyright "Copyright (C) 2003-2019 by Julius O. Smith III <j
 declare allpassnklt license "MIT-style STK-4.3 license";
 allpassnklt(0,sv) = _;
 allpassnklt(n,sv) = _ <: *(s),(*(1+s) : (+
-                   : allpassnklt(n-1,sv))~(*(-s))) : fsec(n)
+: allpassnklt(n-1,sv))~(*(-s))) : fsec(n)
 with {
-  fsec(1) = _, (_<:mem*(1-s),_) : sumandtaps(n);
-  fsec(n) = _, (_<:mem*(1-s),_), par(i,n-1,_) : sumandtaps(n);
-  s = ba.take(n,sv);
-  sumandtaps(n) = +,par(i,n,_);
+fsec(1) = _, (_<:mem*(1-s),_) : sumandtaps(n);
+fsec(n) = _, (_<:mem*(1-s),_), par(i,n-1,_) : sumandtaps(n);
+s = ba.take(n,sv);
+sumandtaps(n) = +,par(i,n,_);
 };
 
 //--------------------`(fi.)iir_lat1`-----------------------
@@ -882,13 +882,13 @@ declare iir_lat1 copyright "Copyright (C) 2003-2019 by Julius O. Smith III <jos@
 declare iir_lat1 license "MIT-style STK-4.3 license";
 iir_lat1(bv,av) = allpassn1mt(M,sv) : sum(i,M+1,*(tghr(i+1)))
 with {
-  M = ba.count(av);
-  sv = av2sv(av); // sv = vector of sin(theta) reflection coefficients
-  tg = bvav2nuv(bv,av); // tg = vector of tap gains
-  tgr(i) = ba.take(M+2-i,tg); // i=1..M+1 (for "takability")
-  tghr(n) = tgr(n)/pi(n);
-  pi(1) = 1;
-  pi(n) = pi(n-1)*(1+ba.take(M-n+2,sv)); // all sign parameters '+'
+M = ba.count(av);
+sv = av2sv(av); // sv = vector of sin(theta) reflection coefficients
+tg = bvav2nuv(bv,av); // tg = vector of tap gains
+tgr(i) = ba.take(M+2-i,tg); // i=1..M+1 (for "takability")
+tghr(n) = tgr(n)/pi(n);
+pi(1) = 1;
+pi(n) = pi(n-1)*(1+ba.take(M-n+2,sv)); // all sign parameters '+'
 };
 
 //-----------------------`(fi.)allpassn1mt`--------------------------
@@ -910,12 +910,12 @@ declare allpassn1mt copyright "Copyright (C) 2003-2019 by Julius O. Smith III <j
 declare allpassn1mt license "MIT-style STK-4.3 license";
 allpassn1mt(0,sv) = _;
 allpassn1mt(n,sv) = _ <: _,_ : ((+:*(s) <: _,_),_ : _,+ : ro.crossnn(1)
-		  : allpassn1mt(n-1,sv),_)~(*(-1)) : fsec(n)
+: allpassn1mt(n-1,sv),_)~(*(-1)) : fsec(n)
 with {
-  fsec(1) = ro.crossnn(1) : _, (_<:mem,_) : +,_;
-  fsec(n) = ro.crossn1(n) : _, (_<:mem,_),par(i,n-1,_) : +, par(i,n,_);
-  innertaps(n) = par(i,n,_);
-  s = ba.take(n,sv); // reflection coefficient s = sin(theta)
+fsec(1) = ro.crossnn(1) : _, (_<:mem,_) : +,_;
+fsec(n) = ro.crossn1(n) : _, (_<:mem,_),par(i,n-1,_) : +, par(i,n,_);
+innertaps(n) = par(i,n,_);
+s = ba.take(n,sv); // reflection coefficient s = sin(theta)
 };
 
 //-------------------------------`(fi.)iir_nl`-------------------------
@@ -941,15 +941,15 @@ declare iir_nl copyright "Copyright (C) 2003-2019 by Julius O. Smith III <jos@cc
 declare iir_nl license "MIT-style STK-4.3 license";
 iir_nl(bv,av) = allpassnnlt(M,sv) : sum(i,M+1,*(tghr(i)))
 with {
-  M = ba.count(av);
-  sv = av2sv(av); // sv = vector of sin(theta) reflection coefficients
-  tg = bvav2nuv(bv,av); // tg = vector of tap gains for 2mul case
-  tgr(i) = ba.take(M+1-i,tg);
-  tghr(n) = tgr(n)/pi(n);
-  pi(0) = 1;
-  s(n) = ba.take(M-n+1,sv); // reflection coefficient = sin(theta)
-  c(n) = sqrt(max(0,1-s(n)*s(n))); // compiler crashes on sqrt(-)
-  pi(n) = pi(n-1)*c(n);
+M = ba.count(av);
+sv = av2sv(av); // sv = vector of sin(theta) reflection coefficients
+tg = bvav2nuv(bv,av); // tg = vector of tap gains for 2mul case
+tgr(i) = ba.take(M+1-i,tg);
+tghr(n) = tgr(n)/pi(n);
+pi(0) = 1;
+s(n) = ba.take(M-n+1,sv); // reflection coefficient = sin(theta)
+c(n) = sqrt(max(0,1-s(n)*s(n))); // compiler crashes on sqrt(-)
+pi(n) = pi(n-1)*c(n);
 };
 
 //-------------------------------`(fi.)allpassnnlt`-------------------------
@@ -976,13 +976,13 @@ declare allpassnnlt license "MIT-style STK-4.3 license";
 allpassnnlt(0,sv) = _;
 allpassnnlt(n,scl*(sv)) = allpassnnlt(n,par(i,count(sv),scl*(sv(i))));
 allpassnnlt(n,sv) = _ <: *(s),(*(c) : (+
-                   : allpassnnlt(n-1,sv))~(*(-s))) : fsec(n)
+: allpassnnlt(n-1,sv))~(*(-s))) : fsec(n)
 with {
-  fsec(1) = _, (_<:mem*(c),_) : sumandtaps(n);
-  fsec(n) = _, (_<:mem*(c),_), par(i,n-1,_) : sumandtaps(n);
-  s = ba.take(n,sv);
-  c = sqrt(max(0,1-s*s));
-  sumandtaps(n) = +,par(i,n,_);
+fsec(1) = _, (_<:mem*(c),_) : sumandtaps(n);
+fsec(n) = _, (_<:mem*(c),_), par(i,n-1,_) : sumandtaps(n);
+s = ba.take(n,sv);
+c = sqrt(max(0,1-s*s));
+sumandtaps(n) = +,par(i,n,_);
 };
 
 //=============================Useful Special Cases=======================================
@@ -1008,21 +1008,21 @@ declare tf2np copyright "Copyright (C) 2003-2019 by Julius O. Smith III <jos@ccr
 declare tf2np license "MIT-style STK-4.3 license";
 tf2np(b0,b1,b2,a1,a2) = allpassnnlt(M,sv) : sum(i,M+1,*(tghr(i)))
 with {
-  smax = 1.0-ma.EPSILON; // maximum reflection-coefficient magnitude allowed
-  s2 = max(-smax, min(smax,a2)); // Project both reflection-coefficients
-  s1 = max(-smax, min(smax,a1/(1+a2))); // into the defined stability-region.
-  sv = (s1,s2); // vector of sin(theta) reflection coefficients
-  M = 2;
-  nu(2) = b2;
-  nu(1) = b1 - b2*a1;
-  nu(0) = (b0-b2*a2) - nu(1)*s1;
-  tg = (nu(0),nu(1),nu(2));
-  tgr(i) = ba.take(M+1-i,tg); // vector of tap gains for 2mul case
-  tghr(n) = tgr(n)/pi(n);  // apply pi parameters for NLF case
-  pi(0) = 1;
-  s(n) = ba.take(M-n+1,sv);
-  c(n) = sqrt(1-s(n)*s(n));
-  pi(n) = pi(n-1)*c(n);
+smax = 1.0-ma.EPSILON; // maximum reflection-coefficient magnitude allowed
+s2 = max(-smax, min(smax,a2)); // Project both reflection-coefficients
+s1 = max(-smax, min(smax,a1/(1+a2))); // into the defined stability-region.
+sv = (s1,s2); // vector of sin(theta) reflection coefficients
+M = 2;
+nu(2) = b2;
+nu(1) = b1 - b2*a1;
+nu(0) = (b0-b2*a2) - nu(1)*s1;
+tg = (nu(0),nu(1),nu(2));
+tgr(i) = ba.take(M+1-i,tg); // vector of tap gains for 2mul case
+tghr(n) = tgr(n)/pi(n);  // apply pi parameters for NLF case
+pi(0) = 1;
+s(n) = ba.take(M-n+1,sv);
+c(n) = sqrt(1-s(n)*s(n));
+pi(n) = pi(n-1)*c(n);
 };
 
 //-----------------------------`(fi.)wgr`---------------------------------
@@ -1048,10 +1048,10 @@ declare wgr copyright "Copyright (C) 2003-2019 by Julius O. Smith III <jos@ccrma
 declare wgr license "MIT-style STK-4.3 license";
 wgr(f,r,x) = (*(G),_<:_,((+:*(C))<:_,_),_:+,_,_:+(x),-) ~ cross : _,*(0-gi)
 with {
-  C = cos(2*ma.PI*f/ma.SR);
-  gi = sqrt(max(0,(1+C)/(1-C))); // compensate amplitude (only needed when
-  G = r*(1-1' + gi')/gi;         // frequency changes substantially)
-  cross = _,_ <: !,_,_,!;
+C = cos(2*ma.PI*f/ma.SR);
+gi = sqrt(max(0,(1+C)/(1-C))); // compensate amplitude (only needed when
+G = r*(1-1' + gi')/gi;         // frequency changes substantially)
+cross = _,_ <: !,_,_,!;
 };
 
 //-----------------------------`(fi.)nlf2`--------------------------------
@@ -1075,12 +1075,12 @@ declare nlf2 author "Julius O. Smith III";
 declare nlf2 copyright "Copyright (C) 2003-2019 by Julius O. Smith III <jos@ccrma.stanford.edu>";
 declare nlf2 license "MIT-style STK-4.3 license";
 nlf2(f,r,x) = ((_<:_,_),(_<:_,_) : (*(s),*(c),*(c),*(0-s)) :>
-              (*(r),+(x))) ~ cross
+(*(r),+(x))) ~ cross
 with {
-  th = 2*ma.PI*f/ma.SR;
-  c = cos(th);
-  s = sin(th);
-  cross = _,_ <: !,_,_,!;
+th = 2*ma.PI*f/ma.SR;
+c = cos(th);
+s = sin(th);
+cross = _,_ <: !,_,_,!;
 };
 
 
@@ -1107,8 +1107,8 @@ declare apnl copyright "Copyright (C) 2003-2019 by Julius O. Smith III <jos@ccrm
 declare apnl license "MIT-style STK-4.3 license";
 apnl(a1,a2,x) = nonLinFilter
 with {
-   condition = _>0;
-   nonLinFilter = (x - _ <: _*(condition*a1 + (1-condition)*a2),_')~_ :> +;
+condition = _>0;
+nonLinFilter = (x - _ <: _*(condition*a1 + (1-condition)*a2),_')~_ :> +;
 };
 
 
@@ -1170,7 +1170,7 @@ declare allpassnn copyright "Copyright (C) 2003-2019 by Julius O. Smith III <jos
 declare allpassnn license "MIT-style STK-4.3 license";
 allpassnn(0,tv) = _;
 allpassnn(n,tv) = _ <: *(s), (*(c) : (+
-        : allpassnn(n-1,tv))~(*(-s))) : _, mem*c : +
+: allpassnn(n-1,tv))~(*(-s))) : _, mem*c : +
 with { c = cos(ba.take(n,tv));  s = sin(ba.take(n,tv)); };
 
 //---------------`(fi.)allpassnkl`-----------------
@@ -1195,7 +1195,7 @@ declare allpassnnkl copyright "Copyright (C) 2003-2019 by Julius O. Smith III <j
 declare allpassnnkl license "MIT-style STK-4.3 license";
 allpassnkl(0,sv) = _;
 allpassnkl(n,sv) = _ <: *(s),(*(1+s) : (+
-                   : allpassnkl(n-1,sv))~(*(-s))) : _, mem*(1-s) : +
+: allpassnkl(n-1,sv))~(*(-s))) : _, mem*(1-s) : +
 with { s = ba.take(n,sv); };
 
 //---------------`(fi.)allpass1m`-----------------
@@ -1219,7 +1219,7 @@ declare allpassn1m copyright "Copyright (C) 2003-2019 by Julius O. Smith III <jo
 declare allpassn1m license "MIT-style STK-4.3 license";
 allpassn1m(0,sv) = _;
 allpassn1m(n,sv) = _ <: _,_ : ((+:*(s) <: _,_),_ : _,+ : cross
-		  : allpassn1m(n-1,sv),_)~(*(-1)) : _',_ : +
+: allpassn1m(n-1,sv),_)~(*(-1)) : _',_ : +
 with { s = ba.take(n,sv); cross = _,_ <: !,_,_,!; };
 
 //===========Digital Filter Sections Specified as Analog Filter Sections==================
@@ -1274,27 +1274,27 @@ declare tf2s copyright "Copyright (C) 2003-2019 by Julius O. Smith III <jos@ccrm
 declare tf2s license "MIT-style STK-4.3 license";
 tf2s(b2,b1,b0,a1,a0,w1) = tf2(b0d,b1d,b2d,a1d,a2d)
 with {
-  c   = 1/tan(w1*0.5/ma.SR); // bilinear-transform scale-factor
-  csq = c*c;
-  d   = a0 + a1 * c + csq;
-  b0d = (b0 + b1 * c + b2 * csq)/d;
-  b1d = 2 * (b0 - b2 * csq)/d;
-  b2d = (b0 - b1 * c + b2 * csq)/d;
-  a1d = 2 * (a0 - csq)/d;
-  a2d = (a0 - a1*c + csq)/d;
+c   = 1/tan(w1*0.5/ma.SR); // bilinear-transform scale-factor
+csq = c*c;
+d   = a0 + a1 * c + csq;
+b0d = (b0 + b1 * c + b2 * csq)/d;
+b1d = 2 * (b0 - b2 * csq)/d;
+b2d = (b0 - b1 * c + b2 * csq)/d;
+a1d = 2 * (a0 - csq)/d;
+a2d = (a0 - a1*c + csq)/d;
 };
 
 // tf2snp = tf2s but using a protected normalized ladder filter for tf2:
 tf2snp(b2,b1,b0,a1,a0,w1) = tf2np(b0d,b1d,b2d,a1d,a2d)
 with {
-  c   = 1/tan(w1*0.5/ma.SR); // bilinear-transform scale-factor
-  csq = c*c;
-  d   = a0 + a1 * c + csq;
-  b0d = (b0 + b1 * c + b2 * csq)/d;
-  b1d = 2 * (b0 - b2 * csq)/d;
-  b2d = (b0 - b1 * c + b2 * csq)/d;
-  a1d = 2 * (a0 - csq)/d;
-  a2d = (a0 - a1*c + csq)/d;
+c   = 1/tan(w1*0.5/ma.SR); // bilinear-transform scale-factor
+csq = c*c;
+d   = a0 + a1 * c + csq;
+b0d = (b0 + b1 * c + b2 * csq)/d;
+b1d = 2 * (b0 - b2 * csq)/d;
+b2d = (b0 - b1 * c + b2 * csq)/d;
+a1d = 2 * (a0 - csq)/d;
+a2d = (a0 - a1*c + csq)/d;
 };
 
 //-----------------------------`(fi.)tf1snp`-------------------------------
@@ -1327,18 +1327,18 @@ declare tf3slf author "Julius O. Smith III";
 declare tf3slf copyright "Copyright (C) 2003-2019 by Julius O. Smith III <jos@ccrma.stanford.edu>";
 declare tf3slf license "MIT-style STK-4.3 license";
 tf3slf(b3,b2,b1,b0,a3,a2,a1,a0) = tf3(b0d,b1d,b2d,b3d,a1d,a2d,a3d) with {
-  c   = 2.0 * ma.SR; // bilinear-transform scale-factor ("lf" case)
-  csq = c*c;
-  cc  = csq*c;
-  // Thank you maxima:
-  b3d = (b3*c^3-b2*c^2+b1*c-b0)/d;
-  b2d = (-3*b3*c^3+b2*c^2+b1*c-3*b0)/d;
-  b1d = (3*b3*c^3+b2*c^2-b1*c-3*b0)/d;
-  b0d = (-b3*c^3-b2*c^2-b1*c-b0)/d;
-  a3d = (a3*c^3-a2*c^2+a1*c-a0)/d;
-  a2d = (-3*a3*c^3+a2*c^2+a1*c-3*a0)/d;
-  a1d = (3*a3*c^3+a2*c^2-a1*c-3*a0)/d;
-  d = (-a3*c^3-a2*c^2-a1*c-a0);
+c   = 2.0 * ma.SR; // bilinear-transform scale-factor ("lf" case)
+csq = c*c;
+cc  = csq*c;
+// Thank you maxima:
+b3d = (b3*c^3-b2*c^2+b1*c-b0)/d;
+b2d = (-3*b3*c^3+b2*c^2+b1*c-3*b0)/d;
+b1d = (3*b3*c^3+b2*c^2-b1*c-3*b0)/d;
+b0d = (-b3*c^3-b2*c^2-b1*c-b0)/d;
+a3d = (a3*c^3-a2*c^2+a1*c-a0)/d;
+a2d = (-3*a3*c^3+a2*c^2+a1*c-3*a0)/d;
+a1d = (3*a3*c^3+a2*c^2-a1*c-3*a0)/d;
+d = (-a3*c^3-a2*c^2-a1*c-a0);
 };
 
 //-----------------------------`(fi.)tf1s`--------------------------------
@@ -1389,11 +1389,11 @@ declare tf1s copyright "Copyright (C) 2003-2019 by Julius O. Smith III <jos@ccrm
 declare tf1s license "MIT-style STK-4.3 license";
 tf1s(b1,b0,a0,w1) = tf1(b0d,b1d,a1d)
 with {
-  c   = 1/tan(w1*0.5/ma.SR); // bilinear-transform scale-factor
-  d   = a0 + c;
-  b1d = (b0 - b1*c) / d;
-  b0d = (b0 + b1*c) / d;
-  a1d = (a0 - c) / d;
+c   = 1/tan(w1*0.5/ma.SR); // bilinear-transform scale-factor
+d   = a0 + c;
+b1d = (b0 - b1*c) / d;
+b0d = (b0 + b1*c) / d;
+a1d = (a0 - c) / d;
 };
 
 //-----------------------------`(fi.)tf2sb`--------------------------------
@@ -1417,19 +1417,19 @@ declare tf2sb author "Julius O. Smith III";
 declare tf2sb copyright "Copyright (C) 2003-2019 by Julius O. Smith III <jos@ccrma.stanford.edu>";
 declare tf2sb license "MIT-style STK-4.3 license";
 tf2sb(b2,b1,b0,a1,a0,w1,wc) =
-  iir((b0d/a0d,b1d/a0d,b2d/a0d,b3d/a0d,b4d/a0d),(a1d/a0d,a2d/a0d,a3d/a0d,a4d/a0d)) with {
-  T = 1.0/float(ma.SR);
-  b0d = (4*b0*w1^2+8*b2*wc^2)*T^2+8*b1*w1*T+16*b2;
-  b1d = 4*b2*wc^4*T^4+4*b1*wc^2*w1*T^3-16*b1*w1*T-64*b2;
-  b2d = 6*b2*wc^4*T^4+(-8*b0*w1^2-16*b2*wc^2)*T^2+96*b2;
-  b3d = 4*b2*wc^4*T^4-4*b1*wc^2*w1*T^3+16*b1*w1*T-64*b2;
-  b4d = (b2*wc^4*T^4-2*b1*wc^2*w1*T^3+(4*b0*w1^2+8*b2*wc^2)*T^2-8*b1*w1*T+16*b2)
-        + b2*wc^4*T^4+2*b1*wc^2*w1*T^3;
-  a0d = wc^4*T^4+2*a1*wc^2*w1*T^3+(4*a0*w1^2+8*wc^2)*T^2+8*a1*w1*T+16;
-  a1d = 4*wc^4*T^4+4*a1*wc^2*w1*T^3-16*a1*w1*T-64;
-  a2d = 6*wc^4*T^4+(-8*a0*w1^2-16*wc^2)*T^2+96;
-  a3d = 4*wc^4*T^4-4*a1*wc^2*w1*T^3+16*a1*w1*T-64;
-  a4d = wc^4*T^4-2*a1*wc^2*w1*T^3+(4*a0*w1^2+8*wc^2)*T^2-8*a1*w1*T+16;
+iir((b0d/a0d,b1d/a0d,b2d/a0d,b3d/a0d,b4d/a0d),(a1d/a0d,a2d/a0d,a3d/a0d,a4d/a0d)) with {
+T = 1.0/float(ma.SR);
+b0d = (4*b0*w1^2+8*b2*wc^2)*T^2+8*b1*w1*T+16*b2;
+b1d = 4*b2*wc^4*T^4+4*b1*wc^2*w1*T^3-16*b1*w1*T-64*b2;
+b2d = 6*b2*wc^4*T^4+(-8*b0*w1^2-16*b2*wc^2)*T^2+96*b2;
+b3d = 4*b2*wc^4*T^4-4*b1*wc^2*w1*T^3+16*b1*w1*T-64*b2;
+b4d = (b2*wc^4*T^4-2*b1*wc^2*w1*T^3+(4*b0*w1^2+8*b2*wc^2)*T^2-8*b1*w1*T+16*b2)
++ b2*wc^4*T^4+2*b1*wc^2*w1*T^3;
+a0d = wc^4*T^4+2*a1*wc^2*w1*T^3+(4*a0*w1^2+8*wc^2)*T^2+8*a1*w1*T+16;
+a1d = 4*wc^4*T^4+4*a1*wc^2*w1*T^3-16*a1*w1*T-64;
+a2d = 6*wc^4*T^4+(-8*a0*w1^2-16*wc^2)*T^2+96;
+a3d = 4*wc^4*T^4-4*a1*wc^2*w1*T^3+16*a1*w1*T-64;
+a4d = wc^4*T^4-2*a1*wc^2*w1*T^3+(4*a0*w1^2+8*wc^2)*T^2-8*a1*w1*T+16;
 };
 
 //-----------------------------`(fi.)tf1sb`--------------------------------
@@ -1446,13 +1446,13 @@ declare tf1sb author "Julius O. Smith III";
 declare tf1sb copyright "Copyright (C) 2003-2019 by Julius O. Smith III <jos@ccrma.stanford.edu>";
 declare tf1sb license "MIT-style STK-4.3 license";
 tf1sb(b1,b0,a0,w1,wc) = tf2(b0d/a0d,b1d/a0d,b2d/a0d,a1d/a0d,a2d/a0d) with {
-  T = 1.0/float(ma.SR);
-  a0d = wc^2*T^2+2*a0*w1*T+4;
-  b0d = b1*wc^2*T^2 +2*b0*w1*T+4*b1;
-  b1d = 2*b1*wc^2*T^2-8*b1;
-  b2d = b1*wc^2*T^2-2*b0*w1*T+4*b1;
-  a1d = 2*wc^2*T^2-8;
-  a2d = wc^2*T^2-2*a0*w1*T+4;
+T = 1.0/float(ma.SR);
+a0d = wc^2*T^2+2*a0*w1*T+4;
+b0d = b1*wc^2*T^2 +2*b0*w1*T+4*b1;
+b1d = 2*b1*wc^2*T^2-8*b1;
+b2d = b1*wc^2*T^2-2*b0*w1*T+4*b1;
+a1d = 2*wc^2*T^2-8;
+a2d = wc^2*T^2-2*a0*w1*T+4;
 };
 
 //==============================Simple Resonator Filters==================================
@@ -1483,12 +1483,12 @@ declare resonlp copyright "Copyright (C) 2003-2019 by Julius O. Smith III <jos@c
 declare resonlp license "MIT-style STK-4.3 license";
 resonlp(fc,Q,gain) = tf2s(b2,b1,b0,a1,a0,wc)
 with {
-     wc = 2*ma.PI*fc;
-     a1 = 1/Q;
-     a0 = 1;
-     b2 = 0;
-     b1 = 0;
-     b0 = gain;
+wc = 2*ma.PI*fc;
+a1 = 1/Q;
+a0 = 1;
+b2 = 0;
+b1 = 0;
+b0 = gain;
 };
 
 
@@ -1543,12 +1543,12 @@ declare resonbp copyright "Copyright (C) 2003-2019 by Julius O. Smith III <jos@c
 declare resonbp license "MIT-style STK-4.3 license";
 resonbp(fc,Q,gain) = tf2s(b2,b1,b0,a1,a0,wc)
 with {
-     wc = 2*ma.PI*fc;
-     a1 = 1/Q;
-     a0 = 1;
-     b2 = 0;
-     b1 = gain;
-     b0 = 0;
+wc = 2*ma.PI*fc;
+a1 = 1/Q;
+a0 = 1;
+b2 = 0;
+b1 = gain;
+b0 = 0;
 };
 
 
@@ -1611,14 +1611,14 @@ declare lowpass0_highpass1 "Copyright (C) 2003-2019 by Julius O. Smith III <jos@
 declare lowpass0_highpass1 "MIT-style STK-4.3 license";
 lowpass0_highpass1(s,N,fc) = lphpr(s,N,N,fc)
 with {
-  lphpr(s,0,N,fc) = _;
-  lphpr(s,1,N,fc) = tf1s(s,1-s,1,2*ma.PI*fc);
-  lphpr(s,O,N,fc) = lphpr(s,(O-2),N,fc) : tf2s(s,0,1-s,a1s,1,w1) with {
-    parity = N % 2;
-    S = (O-parity)/2; // current section number
-    a1s = -2*cos((ma.PI)*-1 + (1-parity)*ma.PI/(2*N) + (S-1+parity)*ma.PI/N);
-    w1 = 2*ma.PI*fc;
-  };
+lphpr(s,0,N,fc) = _;
+lphpr(s,1,N,fc) = tf1s(s,1-s,1,2*ma.PI*fc);
+lphpr(s,O,N,fc) = lphpr(s,(O-2),N,fc) : tf2s(s,0,1-s,a1s,1,w1) with {
+parity = N % 2;
+S = (O-parity)/2; // current section number
+a1s = -2*cos((ma.PI)*-1 + (1-parity)*ma.PI/(2*N) + (S-1+parity)*ma.PI/N);
+w1 = 2*ma.PI*fc;
+};
 };
 
 
@@ -1636,14 +1636,14 @@ highpass_plus_lowpass(1,fc) = _;
 highpass_plus_lowpass(3,fc) = tf2s(1,-1,1,1,1,w1) with { w1 = 2*ma.PI*fc; };
 highpass_plus_lowpass(5,fc) = tf2s(1,-a11,1,a11,1,w1)
 with {
-  a11 = 1.618033988749895;
-  w1 = 2*ma.PI*fc;
+a11 = 1.618033988749895;
+w1 = 2*ma.PI*fc;
 };
 
 // Catch-all definitions for generality - even order is done:
 highpass_plus_lowpass(N,fc) = _ <: switch_odd_even(N%2,N,fc) with {
-  switch_odd_even(0,N,fc) = highpass_plus_lowpass_even(N,fc);
-  switch_odd_even(1,N,fc) = highpass_plus_lowpass_odd(N,fc);
+switch_odd_even(0,N,fc) = highpass_plus_lowpass_even(N,fc);
+switch_odd_even(1,N,fc) = highpass_plus_lowpass_odd(N,fc);
 };
 
 declare highpass_minus_lowpass author "Julius O. Smith III";
@@ -1652,14 +1652,14 @@ declare highpass_minus_lowpass license "MIT-style STK-4.3 license";
 highpass_minus_lowpass(3,fc) = tf1s(-1,1,1,w1) with { w1 = 2*ma.PI*fc; };
 highpass_minus_lowpass(5,fc) = tf1s(1,-1,1,w1) : tf2s(1,-a12,1,a12,1,w1)
 with {
-  a12 = 0.618033988749895;
-  w1 = 2*ma.PI*fc;
+a12 = 0.618033988749895;
+w1 = 2*ma.PI*fc;
 };
 
 // Catch-all definitions for generality - even order is done:
 highpass_minus_lowpass(N,fc) = _ <: switch_odd_even(N%2,N,fc) with {
-  switch_odd_even(0,N,fc) = highpass_minus_lowpass_even(N,fc);
-  switch_odd_even(1,N,fc) = highpass_minus_lowpass_odd(N,fc);
+switch_odd_even(0,N,fc) = highpass_minus_lowpass_even(N,fc);
+switch_odd_even(1,N,fc) = highpass_minus_lowpass_odd(N,fc);
 };
 
 declare highpass_plus_lowpass_even author "Julius O. Smith III";
@@ -1723,13 +1723,13 @@ declare lowpass3e copyright "Copyright (C) 2003-2019 by Julius O. Smith III <jos
 declare lowpass3e license "MIT-style STK-4.3 license";
 lowpass3e(fc) = tf2s(b21,b11,b01,a11,a01,w1) : tf1s(0,1,a02,w1)
 with {
-  a11 = 0.802636764161030; // format long; poly(p(1:2)) % in octave
-  a01 = 1.412270893774204;
-  a02 = 0.822445908998816; // poly(p(3)) % in octave
-  b21 = 0.019809144837789; // poly(z)
-  b11 = 0;
-  b01 = 1.161516418982696;
-  w1 = 2*ma.PI*fc;
+a11 = 0.802636764161030; // format long; poly(p(1:2)) % in octave
+a01 = 1.412270893774204;
+a02 = 0.822445908998816; // poly(p(3)) % in octave
+b21 = 0.019809144837789; // poly(z)
+b11 = 0;
+b01 = 1.161516418982696;
+w1 = 2*ma.PI*fc;
 };
 
 //-----------------------------`(fi.)lowpass6e`-----------------------------
@@ -1759,29 +1759,29 @@ declare lowpass6e author "Julius O. Smith III";
 declare lowpass6e copyright "Copyright (C) 2003-2019 by Julius O. Smith III <jos@ccrma.stanford.edu>";
 declare lowpass6e license "MIT-style STK-4.3 license";
 lowpass6e(fc) =
-              tf2s(b21,b11,b01,a11,a01,w1) :
-              tf2s(b22,b12,b02,a12,a02,w1) :
-              tf2s(b23,b13,b03,a13,a03,w1)
+tf2s(b21,b11,b01,a11,a01,w1) :
+tf2s(b22,b12,b02,a12,a02,w1) :
+tf2s(b23,b13,b03,a13,a03,w1)
 with {
-  b21 = 0.000099999997055;
-  a21 = 1;
-  b11 = 0;
-  a11 = 0.782413046821645;
-  b01 = 0.000433227200555;
-  a01 = 0.245291508706160;
-  b22 = 1;
-  a22 = 1;
-  b12 = 0;
-  a12 = 0.512478641889141;
-  b02 = 7.621731298870603;
-  a02 = 0.689621364484675;
-  b23 = 1;
-  a23 = 1;
-  b13 = 0;
-  a13 = 0.168404871113589;
-  b03 = 53.536152954556727;
-  a03 = 1.069358407707312;
-  w1 = 2*ma.PI*fc;
+b21 = 0.000099999997055;
+a21 = 1;
+b11 = 0;
+a11 = 0.782413046821645;
+b01 = 0.000433227200555;
+a01 = 0.245291508706160;
+b22 = 1;
+a22 = 1;
+b12 = 0;
+a12 = 0.512478641889141;
+b02 = 7.621731298870603;
+a02 = 0.689621364484675;
+b23 = 1;
+a23 = 1;
+b13 = 0;
+a13 = 0.168404871113589;
+b03 = 53.536152954556727;
+a03 = 1.069358407707312;
+w1 = 2*ma.PI*fc;
 };
 
 
@@ -1806,15 +1806,15 @@ declare highpass3e author "Julius O. Smith III";
 declare highpass3e copyright "Copyright (C) 2003-2019 by Julius O. Smith III <jos@ccrma.stanford.edu>";
 declare highpass3e license "MIT-style STK-4.3 license";
 highpass3e(fc) = tf2s(b01/a01,b11/a01,b21/a01,a11/a01,1/a01,w1) :
-                 tf1s(1/a02,0,1/a02,w1)
+tf1s(1/a02,0,1/a02,w1)
 with {
-  a11 = 0.802636764161030;
-  a01 = 1.412270893774204;
-  a02 = 0.822445908998816;
-  b21 = 0.019809144837789;
-  b11 = 0;
-  b01 = 1.161516418982696;
-  w1 = 2*ma.PI*fc;
+a11 = 0.802636764161030;
+a01 = 1.412270893774204;
+a02 = 0.822445908998816;
+b21 = 0.019809144837789;
+b11 = 0;
+b01 = 1.161516418982696;
+w1 = 2*ma.PI*fc;
 };
 
 //-----------------------------`(fi.)highpass6e`-----------------------------
@@ -1835,29 +1835,29 @@ declare highpass6e author "Julius O. Smith III";
 declare highpass6e copyright "Copyright (C) 2003-2019 by Julius O. Smith III <jos@ccrma.stanford.edu>";
 declare highpass6e license "MIT-style STK-4.3 license";
 highpass6e(fc) =
-              tf2s(b01/a01,b11/a01,b21/a01,a11/a01,1/a01,w1) :
-              tf2s(b02/a02,b12/a02,b22/a02,a12/a02,1/a02,w1) :
-              tf2s(b03/a03,b13/a03,b23/a03,a13/a03,1/a03,w1)
+tf2s(b01/a01,b11/a01,b21/a01,a11/a01,1/a01,w1) :
+tf2s(b02/a02,b12/a02,b22/a02,a12/a02,1/a02,w1) :
+tf2s(b03/a03,b13/a03,b23/a03,a13/a03,1/a03,w1)
 with {
-  b21 = 0.000099999997055;
-  a21 = 1;
-  b11 = 0;
-  a11 = 0.782413046821645;
-  b01 = 0.000433227200555;
-  a01 = 0.245291508706160;
-  b22 = 1;
-  a22 = 1;
-  b12 = 0;
-  a12 = 0.512478641889141;
-  b02 = 7.621731298870603;
-  a02 = 0.689621364484675;
-  b23 = 1;
-  a23 = 1;
-  b13 = 0;
-  a13 = 0.168404871113589;
-  b03 = 53.536152954556727;
-  a03 = 1.069358407707312;
-  w1 = 2*ma.PI*fc;
+b21 = 0.000099999997055;
+a21 = 1;
+b11 = 0;
+a11 = 0.782413046821645;
+b01 = 0.000433227200555;
+a01 = 0.245291508706160;
+b22 = 1;
+a22 = 1;
+b12 = 0;
+a12 = 0.512478641889141;
+b02 = 7.621731298870603;
+a02 = 0.689621364484675;
+b23 = 1;
+a23 = 1;
+b13 = 0;
+a13 = 0.168404871113589;
+b03 = 53.536152954556727;
+a03 = 1.069358407707312;
+w1 = 2*ma.PI*fc;
 };
 
 
@@ -1925,24 +1925,24 @@ declare bandpass0_bandstop1 copyright "Copyright (C) 2003-2019 by Julius O. Smit
 declare bandpass0_bandstop1 license "MIT-style STK-4.3 license";
 bandpass0_bandstop1(s,Nh,fl,fu) = bpbsr(s,Nh,Nh,fl,fu)
 with {
-  wl = 2*ma.PI*fl; // digital (z-plane) lower passband edge
-  wu = 2*ma.PI*fu; // digital (z-plane) upper passband edge
+wl = 2*ma.PI*fl; // digital (z-plane) lower passband edge
+wu = 2*ma.PI*fu; // digital (z-plane) upper passband edge
 
-  c = 2.0*ma.SR; // bilinear transform scaling used in tf2sb, tf1sb
-  wla = c*tan(wl/c); // analog (s-plane) lower cutoff
-  wua = c*tan(wu/c); // analog (s-plane) upper cutoff
+c = 2.0*ma.SR; // bilinear transform scaling used in tf2sb, tf1sb
+wla = c*tan(wl/c); // analog (s-plane) lower cutoff
+wua = c*tan(wu/c); // analog (s-plane) upper cutoff
 
-  wc = sqrt(wla*wua); // s-plane center frequency
-  w1 = wua - wc^2/wua; // s-plane lowpass prototype cutoff
+wc = sqrt(wla*wua); // s-plane center frequency
+w1 = wua - wc^2/wua; // s-plane lowpass prototype cutoff
 
-  bpbsr(s,0,Nh,fl,fu) = _;
-  bpbsr(s,1,Nh,fl,fu) = tf1sb(s,1-s,1,w1,wc);
-  bpbsr(s,O,Nh,fl,fu) = bpbsr(s,O-2,Nh,fl,fu) : tf2sb(s,0,(1-s),a1s,1,w1,wc)
-  with {
-    parity = Nh % 2;
-    S = (O-parity)/2; // current section number
-    a1s = -2*cos(-1*ma.PI + (1-parity)*ma.PI/(2*Nh) + (S-1+parity)*ma.PI/Nh);
-  };
+bpbsr(s,0,Nh,fl,fu) = _;
+bpbsr(s,1,Nh,fl,fu) = tf1sb(s,1-s,1,w1,wc);
+bpbsr(s,O,Nh,fl,fu) = bpbsr(s,O-2,Nh,fl,fu) : tf2sb(s,0,(1-s),a1s,1,w1,wc)
+with {
+parity = Nh % 2;
+S = (O-parity)/2; // current section number
+a1s = -2*cos(-1*ma.PI + (1-parity)*ma.PI/(2*Nh) + (S-1+parity)*ma.PI/Nh);
+};
 };
 
 
@@ -1957,22 +1957,22 @@ declare bandpass6e copyright "Copyright (C) 2003-2019 by Julius O. Smith III <jo
 declare bandpass6e license "MIT-style STK-4.3 license";
 bandpass6e(fl,fu) = tf2sb(b21,b11,b01,a11,a01,w1,wc) : tf1sb(0,1,a02,w1,wc)
 with {
-  a11 = 0.802636764161030; // In octave: format long; poly(p(1:2))
-  a01 = 1.412270893774204;
-  a02 = 0.822445908998816; // poly(p(3))
-  b21 = 0.019809144837789; // poly(z)
-  b11 = 0;
-  b01 = 1.161516418982696;
+a11 = 0.802636764161030; // In octave: format long; poly(p(1:2))
+a01 = 1.412270893774204;
+a02 = 0.822445908998816; // poly(p(3))
+b21 = 0.019809144837789; // poly(z)
+b11 = 0;
+b01 = 1.161516418982696;
 
-  wl = 2*ma.PI*fl; // digital (z-plane) lower passband edge
-  wu = 2*ma.PI*fu; // digital (z-plane) upper passband edge
+wl = 2*ma.PI*fl; // digital (z-plane) lower passband edge
+wu = 2*ma.PI*fu; // digital (z-plane) upper passband edge
 
-  c = 2.0*ma.SR; // bilinear transform scaling used in tf2sb, tf1sb
-  wla = c*tan(wl/c); // analog (s-plane) lower cutoff
-  wua = c*tan(wu/c); // analog (s-plane) upper cutoff
+c = 2.0*ma.SR; // bilinear transform scaling used in tf2sb, tf1sb
+wla = c*tan(wl/c); // analog (s-plane) lower cutoff
+wua = c*tan(wu/c); // analog (s-plane) upper cutoff
 
-  wc = sqrt(wla*wua); // s-plane center frequency
-  w1 = wua - wc^2/wua; // s-plane lowpass cutoff
+wc = sqrt(wla*wua); // s-plane center frequency
+w1 = wua - wc^2/wua; // s-plane lowpass cutoff
 };
 
 //----------------------`(fi.)bandpass12e`---------------------------
@@ -1982,38 +1982,38 @@ declare bandpass12e author "Julius O. Smith III";
 declare bandpass12e copyright "Copyright (C) 2003-2019 by Julius O. Smith III <jos@ccrma.stanford.edu>";
 declare bandpass12e license "MIT-style STK-4.3 license";
 bandpass12e(fl,fu) =
-              tf2sb(b21,b11,b01,a11,a01,w1,wc) :
-              tf2sb(b22,b12,b02,a12,a02,w1,wc) :
-              tf2sb(b23,b13,b03,a13,a03,w1,wc)
+tf2sb(b21,b11,b01,a11,a01,w1,wc) :
+tf2sb(b22,b12,b02,a12,a02,w1,wc) :
+tf2sb(b23,b13,b03,a13,a03,w1,wc)
 with { // octave script output:
-  b21 = 0.000099999997055;
-  a21 = 1;
-  b11 = 0;
-  a11 = 0.782413046821645;
-  b01 = 0.000433227200555;
-  a01 = 0.245291508706160;
-  b22 = 1;
-  a22 = 1;
-  b12 = 0;
-  a12 = 0.512478641889141;
-  b02 = 7.621731298870603;
-  a02 = 0.689621364484675;
-  b23 = 1;
-  a23 = 1;
-  b13 = 0;
-  a13 = 0.168404871113589;
-  b03 = 53.536152954556727;
-  a03 = 1.069358407707312;
+b21 = 0.000099999997055;
+a21 = 1;
+b11 = 0;
+a11 = 0.782413046821645;
+b01 = 0.000433227200555;
+a01 = 0.245291508706160;
+b22 = 1;
+a22 = 1;
+b12 = 0;
+a12 = 0.512478641889141;
+b02 = 7.621731298870603;
+a02 = 0.689621364484675;
+b23 = 1;
+a23 = 1;
+b13 = 0;
+a13 = 0.168404871113589;
+b03 = 53.536152954556727;
+a03 = 1.069358407707312;
 
-  wl = 2*ma.PI*fl; // digital (z-plane) lower passband edge
-  wu = 2*ma.PI*fu; // digital (z-plane) upper passband edge
+wl = 2*ma.PI*fl; // digital (z-plane) lower passband edge
+wu = 2*ma.PI*fu; // digital (z-plane) upper passband edge
 
-  c = 2.0*ma.SR; // bilinear transform scaling used in tf2sb, tf1sb
-  wla = c*tan(wl/c); // analog (s-plane) lower cutoff
-  wua = c*tan(wu/c); // analog (s-plane) upper cutoff
+c = 2.0*ma.SR; // bilinear transform scaling used in tf2sb, tf1sb
+wla = c*tan(wl/c); // analog (s-plane) lower cutoff
+wua = c*tan(wu/c); // analog (s-plane) upper cutoff
 
-  wc = sqrt(wla*wua); // s-plane center frequency
-  w1 = wua - wc^2/wua; // s-plane lowpass cutoff
+wc = sqrt(wla*wua); // s-plane center frequency
+w1 = wua - wc^2/wua; // s-plane lowpass cutoff
 };
 
 //------------------------`(fi.)pospass`---------------------------
@@ -2061,25 +2061,25 @@ declare pospass author "Julius O. Smith III";
 declare pospass copyright "Copyright (C) 2003-2019 by Julius O. Smith III <jos@ccrma.stanford.edu>";
 declare pospass license "MIT-style STK-4.3 license";
 pospass(N,fc) = fi.pospass0(lpf) with {
-  fcs = ma.SR/4 - fc; // Upper lowpass cutoff = (SR/2 - fc) - SR/4
-  lpf = fi.lowpass(N,fcs); // Butterworth lowpass
+fcs = ma.SR/4 - fc; // Upper lowpass cutoff = (SR/2 - fc) - SR/4
+lpf = fi.lowpass(N,fcs); // Butterworth lowpass
 };
 
 declare pospass6e author "Julius O. Smith III";
 declare pospass6e copyright "Copyright (C) 2003-2019 by Julius O. Smith III <jos@ccrma.stanford.edu>";
 declare pospass6e license "MIT-style STK-4.3 license";
 pospass6e(fc) = fi.pospass0(lpf) with {
-  lpf = fi.lowpass6e(ma.SR/4 - fc); // Elliptic lowpass, order 6
+lpf = fi.lowpass6e(ma.SR/4 - fc); // Elliptic lowpass, order 6
 };
 
 declare pospass0 author "Julius O. Smith III";
 declare pospass0 copyright "Copyright (C) 2003-2019 by Julius O. Smith III <jos@ccrma.stanford.edu>";
 declare pospass0 license "MIT-style STK-4.3 license";
 pospass0(lpf) = unmodulate : lpf, lpf : modulate with {
-  c = 1-1' : +~(*(-1):mem); // complex sinusoid rotating at SR/4
-  s = c'; // ||: 0, 1, 0, -1 :||
-  unmodulate = _ <: *(c),*(-s); // subtract SR/4 from all input frequencies
-  modulate(x,y) = c*x-s*y, c*y + s*x; // add SR/4 to all frequencies
+c = 1-1' : +~(*(-1):mem); // complex sinusoid rotating at SR/4
+s = c'; // ||: 0, 1, 0, -1 :||
+unmodulate = _ <: *(c),*(-s); // subtract SR/4 from all input frequencies
+modulate(x,y) = c*x-s*y, c*y + s*x; // add SR/4 to all frequencies
 };
 
 
@@ -2245,14 +2245,14 @@ declare peak_eq author "Julius O. Smith III";
 declare peak_eq copyright "Copyright (C) 2003-2019 by Julius O. Smith III <jos@ccrma.stanford.edu>";
 declare peak_eq license "MIT-style STK-4.3 license";
 peak_eq(Lfx,fx,B) = tf2s(1,b1s,1,a1s,1,wx) with {
-  T = float(1.0/ma.SR);
-  Bw = B*T/sin(wx*T); // prewarp s-bandwidth for more accuracy in z-plane
-  a1 = ma.PI*Bw;
-  b1 = g*a1;
-  g = ba.db2linear(abs(Lfx));
-  b1s = select2(Lfx>0,a1,b1); // When Lfx>0, pole dominates bandwidth
-  a1s = select2(Lfx>0,b1,a1); // When Lfx<0, zero dominates
-  wx = 2*ma.PI*fx;
+T = float(1.0/ma.SR);
+Bw = B*T/sin(wx*T); // prewarp s-bandwidth for more accuracy in z-plane
+a1 = ma.PI*Bw;
+b1 = g*a1;
+g = ba.db2linear(abs(Lfx));
+b1s = select2(Lfx>0,a1,b1); // When Lfx>0, pole dominates bandwidth
+a1s = select2(Lfx>0,b1,a1); // When Lfx<0, zero dominates
+wx = 2*ma.PI*fx;
 };
 
 //--------------------`(fi.)peak_eq_cq`----------------------------
@@ -2308,10 +2308,10 @@ declare peak_eq_rm author "Julius O. Smith III";
 declare peak_eq_rm copyright "Copyright (C) 2003-2019 by Julius O. Smith III <jos@ccrma.stanford.edu>";
 declare peak_eq_rm license "MIT-style STK-4.3 license";
 peak_eq_rm(Lfx,fx,tanPiBT) = _ <: _,A,_ : +,- : *(0.5),*(K/2.0) : + with {
-  A = tf2(k2, k1*(1+k2), 1, k1*(1+k2), k2) <: _,_; // allpass
-  k1 = 0.0 - cos(2.0*ma.PI*fx/ma.SR);
-  k2 = (1.0 - tanPiBT)/(1.0 + tanPiBT);
-  K = ba.db2linear(Lfx);
+A = tf2(k2, k1*(1+k2), 1, k1*(1+k2), k2) <: _,_; // allpass
+k1 = 0.0 - cos(2.0*ma.PI*fx/ma.SR);
+k2 = (1.0 - tanPiBT)/(1.0 + tanPiBT);
+K = ba.db2linear(Lfx);
 };
 
 
@@ -2352,21 +2352,21 @@ declare spectral_tilt author "Julius O. Smith III";
 declare spectral_tilt copyright "Copyright (C) 2003-2019 by Julius O. Smith III <jos@ccrma.stanford.edu>";
 declare spectral_tilt license "MIT-style STK-4.3 license";
 spectral_tilt(N,f0,bw,alpha) = seq(i,N,sec(i)) with {
-  sec(i) = g * tf1s(b1,b0,a0,1) with {
-    g = a0/b0; // unity dc-gain scaling
-    b1 = 1.0;
-    b0 = mzh(i);
-    a0 = mph(i);
-    mzh(i) = prewarp(mz(i),ma.SR,w0); // prewarping for bilinear transform
-    mph(i) = prewarp(mp(i),ma.SR,w0);
-    prewarp(w,SR,wp) = wp * tan(w*T/2) / tan(wp*T/2) with { T = 1/ma.SR; };
-    mz(i) = w0 * r ^ (-alpha+i); // minus zero i in s plane
-    mp(i) = w0 * r ^ i; // minus pole i in s plane
-    f0p = max(f0,ma.EPSILON); // cannot go to zero
-    w0 = 2 * ma.PI * f0p; // radian frequency of first pole
-    f1 = f0p + bw; // upper band limit
-    r = (f1/f0p)^(1.0/float(N-1)); // pole ratio (2 => octave spacing)
-  };
+sec(i) = g * tf1s(b1,b0,a0,1) with {
+g = a0/b0; // unity dc-gain scaling
+b1 = 1.0;
+b0 = mzh(i);
+a0 = mph(i);
+mzh(i) = prewarp(mz(i),ma.SR,w0); // prewarping for bilinear transform
+mph(i) = prewarp(mp(i),ma.SR,w0);
+prewarp(w,SR,wp) = wp * tan(w*T/2) / tan(wp*T/2) with { T = 1/ma.SR; };
+mz(i) = w0 * r ^ (-alpha+i); // minus zero i in s plane
+mp(i) = w0 * r ^ i; // minus pole i in s plane
+f0p = max(f0,ma.EPSILON); // cannot go to zero
+w0 = 2 * ma.PI * f0p; // radian frequency of first pole
+f1 = f0p + bw; // upper band limit
+r = (f1/f0p)^(1.0/float(N-1)); // pole ratio (2 => octave spacing)
+};
 };
 
 
@@ -2394,11 +2394,11 @@ declare levelfilter copyright "Copyright (C) 2003-2019 by Julius O. Smith III <j
 declare levelfilter license "MIT-style STK-4.3 license";
 levelfilter(L,freq,x) = (L * L0 * x) + ((1.0-L) * lp2out(x))
 with {
-  L0 = pow(L,1/3);
-  Lw = ma.PI*freq/ma.SR; // = w1 T / 2
-  Lgain = Lw / (1.0 + Lw);
-  Lpole2 = (1.0 - Lw) / (1.0 + Lw);
-  lp2out = *(Lgain) : + ~ *(Lpole2);
+L0 = pow(L,1/3);
+Lw = ma.PI*freq/ma.SR; // = w1 T / 2
+Lgain = Lw / (1.0 + Lw);
+Lpole2 = (1.0 - Lw) / (1.0 + Lw);
+lp2out = *(Lgain) : + ~ *(Lpole2);
 };
 
 
@@ -2501,12 +2501,12 @@ levelfilterN(N,freq,L) = seq(i,N,levelfilter((L/N),freq));
 declare mth_octave_filterbank author "Julius O. Smith III";
 declare mth_octave_filterbank copyright "Copyright (C) 2003-2019 by Julius O. Smith III <jos@ccrma.stanford.edu>";
 declare mth_octave_filterbank license "MIT-style STK-4.3 license";
-mth_octave_filterbank(O,M,ftop,N) = an.mth_octave_analyzer(O,M,ftop,N) : delayeq(N) 
+mth_octave_filterbank(O,M,ftop,N) = an.mth_octave_analyzer(O,M,ftop,N) : delayeq(N)
 with {
-   fc(n) = ftop * 2^(float(n-N+1)/float(M)); // -3dB crossover frequencies
-   ap(n) = highpass_plus_lowpass(O,fc(n));   // delay-equalizing allpass
-   delayeq(N) = par(i,N-2,apchain(i+1)), _, _;
-   apchain(i) = seq(j,N-1-i,ap(j+1));
+fc(n) = ftop * 2^(float(n-N+1)/float(M)); // -3dB crossover frequencies
+ap(n) = highpass_plus_lowpass(O,fc(n));   // delay-equalizing allpass
+delayeq(N) = par(i,N-2,apchain(i+1)), _, _;
+apchain(i) = seq(j,N-1-i,ap(j+1));
 };
 
 // dc-inverted version. This reduces the delay-equalizer order for odd O.
@@ -2515,12 +2515,12 @@ with {
 declare mth_octave_filterbank_alt author "Julius O. Smith III";
 declare mth_octave_filterbank_alt copyright "Copyright (C) 2003-2019 by Julius O. Smith III <jos@ccrma.stanford.edu>";
 declare mth_octave_filterbank_alt license "MIT-style STK-4.3 license";
-mth_octave_filterbank_alt(O,M,ftop,N) = an.mth_octave_analyzer(O,M,ftop,N) : delayeqi(O,N) 
+mth_octave_filterbank_alt(O,M,ftop,N) = an.mth_octave_analyzer(O,M,ftop,N) : delayeqi(O,N)
 with {
-    fc(n) = ftop * 2^(float(n-N+1)/float(M)); // -3dB crossover frequencies
-    ap(n) = highpass_minus_lowpass(O,fc(n)); // half the order of 'plus' case
-    delayeqi(N) = par(i,N-2,apchain(i+1)), _, *(-1.0);
-    apchain(i) = seq(j,N-1-i,ap(j+1));
+fc(n) = ftop * 2^(float(n-N+1)/float(M)); // -3dB crossover frequencies
+ap(n) = highpass_minus_lowpass(O,fc(n)); // half the order of 'plus' case
+delayeqi(N) = par(i,N-2,apchain(i+1)), _, *(-1.0);
+apchain(i) = seq(j,N-1-i,ap(j+1));
 };
 
 // Note that even-order cases require complex coefficients.
@@ -2575,15 +2575,15 @@ mth_octave_filterbank_default = mth_octave_filterbank5;
 declare filterbank author "Julius O. Smith III";
 declare filterbank copyright "Copyright (C) 2003-2019 by Julius O. Smith III <jos@ccrma.stanford.edu>";
 declare filterbank license "MIT-style STK-4.3 license";
-filterbank(O,lfreqs) = an.analyzer(O,lfreqs) : delayeq(nb) 
+filterbank(O,lfreqs) = an.analyzer(O,lfreqs) : delayeq(nb)
 with {
-   nb = ba.count(lfreqs);
-   fc(n) = ba.take(n, lfreqs);
-   ap(n) = highpass_plus_lowpass(O,fc(n));
-   delayeq(1) = _,_; // par(i,0,...) does not fly
-   delayeq(nb) = par(i,nb-1,apchain(nb-1-i)),_,_;
-   apchain(0) = _;
-   apchain(i) = ap(i) : apchain(i-1);
+nb = ba.count(lfreqs);
+fc(n) = ba.take(n, lfreqs);
+ap(n) = highpass_plus_lowpass(O,fc(n));
+delayeq(1) = _,_; // par(i,0,...) does not fly
+delayeq(nb) = par(i,nb-1,apchain(nb-1-i)),_,_;
+apchain(0) = _;
+apchain(i) = ap(i) : apchain(i-1);
 };
 
 //-----------------`(fi.)filterbanki`----------------------
@@ -2611,29 +2611,29 @@ with {
 declare filterbanki author "Julius O. Smith III";
 declare filterbanki copyright "Copyright (C) 2003-2019 by Julius O. Smith III <jos@ccrma.stanford.edu>";
 declare filterbanki license "MIT-style STK-4.3 license";
-filterbanki(O,lfreqs) = _ <: bsplit(nb) 
+filterbanki(O,lfreqs) = _ <: bsplit(nb)
 with {
-   nb = ba.count(lfreqs);
-   fc(n) = ba.take(n, lfreqs);
-   lp(n) = lowpass(O,fc(n));
-   hp(n) = highpass(O,fc(n));
-   ap(n) = highpass_minus_lowpass(O,fc(n));
-   bsplit(0) = *(-1.0);
-   bsplit(i) = (hp(i) : delayeq(i-1)), (lp(i) <: bsplit(i-1));
-   delayeq(0) = _; // moving the *(-1) here inverts all outputs BUT dc
-   delayeq(i) = ap(i) : delayeq(i-1);
+nb = ba.count(lfreqs);
+fc(n) = ba.take(n, lfreqs);
+lp(n) = lowpass(O,fc(n));
+hp(n) = highpass(O,fc(n));
+ap(n) = highpass_minus_lowpass(O,fc(n));
+bsplit(0) = *(-1.0);
+bsplit(i) = (hp(i) : delayeq(i-1)), (lp(i) <: bsplit(i-1));
+delayeq(0) = _; // moving the *(-1) here inverts all outputs BUT dc
+delayeq(i) = ap(i) : delayeq(i-1);
 };
 
 
 //===============State Variable Filters=========================================================
-// #### References 
+// #### References
 // Solving the continuous SVF equations using trapezoidal integration
 //
 // <https://cytomic.com/files/dsp/SvfLinearTrapOptimised2.pdf>
 //========================================================================================
 
 //-----------------`(fi.)svf`----------------------
-// An environment with `lp`, `bp`, `hp`, `notch`, `peak`, `ap`, `bell`, `ls`, `hs` SVF based filters. 
+// An environment with `lp`, `bp`, `hp`, `notch`, `peak`, `ap`, `bell`, `ls`, `hs` SVF based filters.
 // All filters have `freq` and `Q` parameters, the `bell`, `ls`, `hs` ones also have a `gain` third parameter.
 //
 // #### Usage
@@ -2656,54 +2656,54 @@ declare svf license "MIT-style STK-4.3 license";
 
 svf = environment {
 
-	// Internal implementation
-	svf(T,F,Q,G) = tick ~ (_,_) : !,!,si.dot(3, mix)
-	with {
-		tick(ic1eq, ic2eq, v0) =
-			2*v1 - ic1eq,
-			2*v2 - ic2eq,
-			v0, v1, v2
-		with {
-			v1 = ic1eq + g *(v0-ic2eq) : /(1 + g*(g+k));
-			v2 = ic2eq + g * v1;
-		};
+// Internal implementation
+svf(T,F,Q,G) = tick ~ (_,_) : !,!,si.dot(3, mix)
+with {
+tick(ic1eq, ic2eq, v0) =
+2*v1 - ic1eq,
+2*v2 - ic2eq,
+v0, v1, v2
+with {
+v1 = ic1eq + g *(v0-ic2eq) : /(1 + g*(g+k));
+v2 = ic2eq + g * v1;
+};
 
-		A = pow(10.0, G/40.0);
+A = pow(10.0, G/40.0);
 
-		g = tan(F * ma.PI/ma.SR) : case {
-			(7) => /(sqrt(A));
-			(8) => *(sqrt(A));
-			(t) => _;
-		} (T);
+g = tan(F * ma.PI/ma.SR) : case {
+(7) => /(sqrt(A));
+(8) => *(sqrt(A));
+(t) => _;
+} (T);
 
-		k = case {
-			(6) => 1/(Q*A);
-			(t) => 1/Q;
-		} (T);
+k = case {
+(6) => 1/(Q*A);
+(t) => 1/Q;
+} (T);
 
-		mix = case {
-			(0) => 0, 0, 1;
-			(1) => 0, 1, 0;
-			(2) => 1, -k, -1;
-			(3) => 1, -k, 0;
-			(4) => 1, -k, -2;
-			(5) => 1, -2*k, 0;
-			(6) => 1, k*(A*A-1), 0;
-			(7) => 1, k*(A-1), A*A-1;
-			(8) => A*A, k*(1-A)*A, 1-A*A;
-		} (T);
-	};
+mix = case {
+(0) => 0, 0, 1;
+(1) => 0, 1, 0;
+(2) => 1, -k, -1;
+(3) => 1, -k, 0;
+(4) => 1, -k, -2;
+(5) => 1, -2*k, 0;
+(6) => 1, k*(A*A-1), 0;
+(7) => 1, k*(A-1), A*A-1;
+(8) => A*A, k*(1-A)*A, 1-A*A;
+} (T);
+};
 
-	// External API 
-	lp(f,q)     = svf(0, f, q, 0);
-	bp(f,q)     = svf(1, f, q, 0);
-	hp(f,q)     = svf(2, f, q, 0);
-	notch(f,q)  = svf(3, f, q, 0);
-	peak(f,q)   = svf(4, f, q, 0);
-	ap(f,q)     = svf(5, f, q, 0);
-	bell(f,q,g) = svf(6, f, q, g);
-	ls(f,q,g)   = svf(7, f, q, g);
-	hs(f,q,g)   = svf(8, f, q, g);
+// External API
+lp(f,q)     = svf(0, f, q, 0);
+bp(f,q)     = svf(1, f, q, 0);
+hp(f,q)     = svf(2, f, q, 0);
+notch(f,q)  = svf(3, f, q, 0);
+peak(f,q)   = svf(4, f, q, 0);
+ap(f,q)     = svf(5, f, q, 0);
+bell(f,q,g) = svf(6, f, q, g);
+ls(f,q,g)   = svf(7, f, q, g);
+hs(f,q,g)   = svf(8, f, q, g);
 };
 
 
@@ -2721,7 +2721,7 @@ svf = environment {
 // For the phase correction, we will use the 2nd-order Butterworth allpass.
 //
 // #### Reference
-// Zavalishin, Vadim. "The art of VA filter design." Native Instruments, Berlin, Germany (2012). 
+// Zavalishin, Vadim. "The art of VA filter design." Native Instruments, Berlin, Germany (2012).
 //=============================================================================
 
 
@@ -2740,7 +2740,7 @@ svf = environment {
 //------------------------------------------------------------------------------
 declare lowpassLR4 author "Dario Sanfilippo";
 declare lowpassLR4 copyright
-    "Copyright (C) 2022 Dario Sanfilippo <sanfilippo.dario@gmail.com>";
+"Copyright (C) 2022 Dario Sanfilippo <sanfilippo.dario@gmail.com>";
 declare lowpassLR4 license "MIT-style STK-4.3 license";
 lowpassLR4(cf, x) = x : seq(i, 2, svf.lp(cf, 1.0 / sqrt(2.0)));
 
@@ -2760,7 +2760,7 @@ lowpassLR4(cf, x) = x : seq(i, 2, svf.lp(cf, 1.0 / sqrt(2.0)));
 //------------------------------------------------------------------------------
 declare highpassLR4 author "Dario Sanfilippo";
 declare highpassLR4 copyright
-    "Copyright (C) 2022 Dario Sanfilippo <sanfilippo.dario@gmail.com>";
+"Copyright (C) 2022 Dario Sanfilippo <sanfilippo.dario@gmail.com>";
 declare highpassLR4 license "MIT-style STK-4.3 license";
 highpassLR4(cf, x) = x : seq(i, 2, svf.hp(cf, 1.0 / sqrt(2.0)));
 
@@ -2780,7 +2780,7 @@ highpassLR4(cf, x) = x : seq(i, 2, svf.hp(cf, 1.0 / sqrt(2.0)));
 //------------------------------------------------------------------------------
 declare crossover2LR4 author "Dario Sanfilippo";
 declare crossover2LR4 copyright
-    "Copyright (C) 2022 Dario Sanfilippo <sanfilippo.dario@gmail.com>";
+"Copyright (C) 2022 Dario Sanfilippo <sanfilippo.dario@gmail.com>";
 declare crossover2LR4 license "MIT-style STK-4.3 license";
 crossover2LR4(cf, x) = lowpassLR4(cf, x) , highpassLR4(cf, x);
 
@@ -2801,10 +2801,10 @@ crossover2LR4(cf, x) = lowpassLR4(cf, x) , highpassLR4(cf, x);
 //------------------------------------------------------------------------------
 declare crossover3LR4 author "Dario Sanfilippo";
 declare crossover3LR4 copyright
-    "Copyright (C) 2022 Dario Sanfilippo <sanfilippo.dario@gmail.com>";
+"Copyright (C) 2022 Dario Sanfilippo <sanfilippo.dario@gmail.com>";
 declare crossover3LR4 license "MIT-style STK-4.3 license";
 crossover3LR4(cf1, cf2, x) =
-    crossover2LR4(cf1, x) : svf.ap(cf2, 1.0 / sqrt(2.0)) , crossover2LR4(cf2);
+crossover2LR4(cf1, x) : svf.ap(cf2, 1.0 / sqrt(2.0)) , crossover2LR4(cf2);
 
 
 //----------`(fi.)crossover4LR4`------------------------------------------------
@@ -2824,14 +2824,14 @@ crossover3LR4(cf1, cf2, x) =
 //------------------------------------------------------------------------------
 declare crossover4LR4 author "Dario Sanfilippo";
 declare crossover4LR4 copyright
-    "Copyright (C) 2022 Dario Sanfilippo <sanfilippo.dario@gmail.com>";
+"Copyright (C) 2022 Dario Sanfilippo <sanfilippo.dario@gmail.com>";
 declare crossover4LR4 license "MIT-style STK-4.3 license";
 crossover4LR4(cf1, cf2, cf3, x) =
-    crossover2LR4(cf2, x) :
-        svf.ap(cf3, 1.0 / sqrt(2.0)) ,
-        svf.ap(cf1, 1.0 / sqrt(2.0)) :
-            crossover2LR4(cf1) ,
-            crossover2LR4(cf3);
+crossover2LR4(cf2, x) :
+svf.ap(cf3, 1.0 / sqrt(2.0)) ,
+svf.ap(cf1, 1.0 / sqrt(2.0)) :
+crossover2LR4(cf1) ,
+crossover2LR4(cf3);
 
 
 //----------`(fi.)crossover8LR4`------------------------------------------------
@@ -2849,25 +2849,25 @@ crossover4LR4(cf1, cf2, cf3, x) =
 //------------------------------------------------------------------------------
 declare crossover8LR4 author "Dario Sanfilippo";
 declare crossover8LR4 copyright
-    "Copyright (C) 2022 Dario Sanfilippo <sanfilippo.dario@gmail.com>";
+"Copyright (C) 2022 Dario Sanfilippo <sanfilippo.dario@gmail.com>";
 declare crossover8LR4 license "MIT-style STK-4.3 license";
 crossover8LR4(cf1, cf2, cf3, cf4, cf5, cf6, cf7, x) =
-    crossover2LR4(cf4, x) :
-        (ap(cf6) : ap(cf5) : ap(cf7)) ,
-        (ap(cf2) : ap(cf1) : ap(cf3)) :
-            crossover2LR4(cf2) ,
-            crossover2LR4(cf6) :
-                ap(cf3) ,
-                ap(cf1) ,
-                ap(cf7) ,
-                ap(cf5) :
-                    crossover2LR4(cf1) ,
-                    crossover2LR4(cf3) ,
-                    crossover2LR4(cf5) ,
-                    crossover2LR4(cf7)
-    with {
-        ap(cf) = svf.ap(cf, 1.0 / sqrt(2.0));
-    };
+crossover2LR4(cf4, x) :
+(ap(cf6) : ap(cf5) : ap(cf7)) ,
+(ap(cf2) : ap(cf1) : ap(cf3)) :
+crossover2LR4(cf2) ,
+crossover2LR4(cf6) :
+ap(cf3) ,
+ap(cf1) ,
+ap(cf7) ,
+ap(cf5) :
+crossover2LR4(cf1) ,
+crossover2LR4(cf3) ,
+crossover2LR4(cf5) ,
+crossover2LR4(cf7)
+with {
+ap(cf) = svf.ap(cf, 1.0 / sqrt(2.0));
+};
 
 
 //=========================== Standardized Filters ============================
@@ -2910,40 +2910,40 @@ declare itu_r_bs_1770_4_kfilter license "ISC license";
 
 itu_r_bs_1770_4_kfilter = stage1 : stage2 : normalize997Hz
 with {
-  freq2k(f_c) = tan((ma.PI * f_c)/ma.SR);
+freq2k(f_c) = tan((ma.PI * f_c)/ma.SR);
 
-  stage1 = tf22t(b0,b1,b2,a1,a2)
-  with {
-    f_c = 1681.7632251028442; // Hertz
-    gain = 3.9997778685513232; // Decibel
-    K = freq2k(f_c);
-    V_0 = pow(10, (gain/20.0));
+stage1 = tf22t(b0,b1,b2,a1,a2)
+with {
+f_c = 1681.7632251028442; // Hertz
+gain = 3.9997778685513232; // Decibel
+K = freq2k(f_c);
+V_0 = pow(10, (gain/20.0));
 
-    denominator = 1.0 + sqrt(2.0)*K + K^2;
-    b0 = (V_0 + sqrt((2.0*V_0))*K + K^2) / denominator;
-    b1 = 2.0*(K^2 - V_0) / denominator;
-    b2 = (V_0 - sqrt(2.0*V_0)*K + K^2) / denominator;
+denominator = 1.0 + sqrt(2.0)*K + K^2;
+b0 = (V_0 + sqrt((2.0*V_0))*K + K^2) / denominator;
+b1 = 2.0*(K^2 - V_0) / denominator;
+b2 = (V_0 - sqrt(2.0*V_0)*K + K^2) / denominator;
 
-    a1 = 2*(K^2 - 1) / denominator;
-    a2 = (1 - sqrt(2.0)*K + K^2) / denominator;
-  };
+a1 = 2*(K^2 - 1) / denominator;
+a2 = (1 - sqrt(2.0)*K + K^2) / denominator;
+};
 
-  stage2 = tf22t(b0,b1,b2,a1,a2)
-  with {
-    f_c = 38.135470876002174; // Hertz
-    Q = 0.5003270373223665;
-    K = freq2k(f_c);
+stage2 = tf22t(b0,b1,b2,a1,a2)
+with {
+f_c = 38.135470876002174; // Hertz
+Q = 0.5003270373223665;
+K = freq2k(f_c);
 
-    denominator = (K^2) * Q + K + Q;
-    b0 = Q / denominator;
-    b1 = -2*Q / denominator;
-    b2 = b0;
+denominator = (K^2) * Q + K + Q;
+b0 = Q / denominator;
+b1 = -2*Q / denominator;
+b2 = b0;
 
-    a1 = (2*Q * (K^2 - 1)) / denominator;
-    a2 = ((K^2) * Q - K + Q) / denominator;
-  };
+a1 = (2*Q * (K^2 - 1)) / denominator;
+a2 = ((K^2) * Q - K + Q) / denominator;
+};
 
-  normalize997Hz = *(0.9273671710547968);
+normalize997Hz = *(0.9273671710547968);
 };
 
 
@@ -2967,9 +2967,9 @@ with {
 // * `period` is the averaging frame in seconds
 //-----------------------------------------------------------------------------
 declare avg_rect author "Dario Sanfilippo and Julius O. Smith III";
-declare avg_rect copyright "Copyright (C) 2020 Dario Sanfilippo 
-      <sanfilippo.dario@gmail.com> and 
-       2003-2020 by Julius O. Smith III <jos@ccrma.stanford.edu>";
+declare avg_rect copyright "Copyright (C) 2020 Dario Sanfilippo
+<sanfilippo.dario@gmail.com> and
+2003-2020 by Julius O. Smith III <jos@ccrma.stanford.edu>";
 declare avg_rect license "MIT-style STK-4.3 license";
 avg_rect(period, x) = x : ba.slidingMean(rint(period * ma.SR));
 
@@ -2980,7 +2980,7 @@ avg_rect(period, x) = x : ba.slidingMean(rint(period * ma.SR));
 // that is, tau is the integral of the filter's impulse response. This
 // response is slower to reach the final value but has less ripples in
 // non-steady signals.
-// 
+//
 // #### Usage
 //
 // ```
@@ -2989,7 +2989,7 @@ avg_rect(period, x) = x : ba.slidingMean(rint(period * ma.SR));
 //
 // Where:
 //
-// * `period` is the time, in seconds, for the system to decay by 1/e, 
+// * `period` is the time, in seconds, for the system to decay by 1/e,
 // or to reach 1-1/e of its final value.
 //
 // #### Reference
@@ -2997,18 +2997,18 @@ avg_rect(period, x) = x : ba.slidingMean(rint(period * ma.SR));
 // <https://ccrma.stanford.edu/~jos/mdft/Exponentials.html>
 //-----------------------------------------------------------------------------
 declare avg_tau author "Dario Sanfilippo and Julius O. Smith III";
-declare avg_tau copyright "Copyright (C) 2020 Dario Sanfilippo 
-      <sanfilippo.dario@gmail.com> and 
-       2003-2020 by Julius O. Smith III <jos@ccrma.stanford.edu>";
+declare avg_tau copyright "Copyright (C) 2020 Dario Sanfilippo
+<sanfilippo.dario@gmail.com> and
+2003-2020 by Julius O. Smith III <jos@ccrma.stanford.edu>";
 declare avg_tau license "MIT-style STK-4.3 license";
 avg_tau(period, x) = fi.lptau(period, x);
 
 
 //----------------------------`(fi.)avg_t60`-------------------------------------
 // Averaging function based on a one-pole filter and the t60 response time.
-// This response is particularly useful when the system is required to 
+// This response is particularly useful when the system is required to
 // reach the final value after about `period` seconds.
-// 
+//
 // #### Usage
 //
 // ```
@@ -3017,7 +3017,7 @@ avg_tau(period, x) = fi.lptau(period, x);
 //
 // Where:
 //
-// * `period` is the time, in seconds, for the system to decay by 1/1000, 
+// * `period` is the time, in seconds, for the system to decay by 1/1000,
 // or to reach 1-1/1000 of its final value.
 //
 // #### Reference
@@ -3025,9 +3025,9 @@ avg_tau(period, x) = fi.lptau(period, x);
 // <https://ccrma.stanford.edu/~jos/mdft/Audio_Decay_Time_T60.html>
 //-----------------------------------------------------------------------------
 declare avg_t60 author "Dario Sanfilippo and Julius O. Smith III";
-declare avg_t60 copyright "Copyright (C) 2020 Dario Sanfilippo 
-      <sanfilippo.dario@gmail.com> and 
-       2003-2020 by Julius O. Smith III <jos@ccrma.stanford.edu>";
+declare avg_t60 copyright "Copyright (C) 2020 Dario Sanfilippo
+<sanfilippo.dario@gmail.com> and
+2003-2020 by Julius O. Smith III <jos@ccrma.stanford.edu>";
 declare avg_t60 license "MIT-style STK-4.3 license";
 avg_t60(period, x) = fi.lpt60(period, x);
 
@@ -3046,7 +3046,7 @@ avg_t60(period, x) = fi.lpt60(period, x);
 //
 // Where:
 //
-// * `period` is the time, in seconds, for the system to decay by 1/e^2.2, 
+// * `period` is the time, in seconds, for the system to decay by 1/e^2.2,
 // or to reach 1-1/e^2.2 of its final value.
 //
 // #### Reference
@@ -3054,10 +3054,10 @@ avg_t60(period, x) = fi.lpt60(period, x);
 //-----------------------------------------------------------------------------
 declare avg_t19 author "Dario Sanfilippo and Julius O. Smith III";
 declare avg_t19 copyright "Copyright (C) 2020 Dario Sanfilippo
-      <sanfilippo.dario@gmail.com> and
-       2003-2020 by Julius O. Smith III <jos@ccrma.stanford.edu>";
+<sanfilippo.dario@gmail.com> and
+2003-2020 by Julius O. Smith III <jos@ccrma.stanford.edu>";
 declare avg_t19 license "MIT-style STK-4.3 license";
-avg_t19(period, x) = fi.lpt19(period, x); 
+avg_t19(period, x) = fi.lpt19(period, x);
 
 
 /*******************************************************************************
@@ -3065,45 +3065,45 @@ avg_t19(period, x) = fi.lpt19(period, x);
 
 ## STK 4.3 License
 
-Permission is hereby granted, free of charge, to any person obtaining a copy of 
-this software and associated documentation files (the "Software"), to deal in 
-the Software without restriction, including without limitation the rights to 
-use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies 
-of the Software, and to permit persons to whom the Software is furnished to do 
+Permission is hereby granted, free of charge, to any person obtaining a copy of
+this software and associated documentation files (the "Software"), to deal in
+the Software without restriction, including without limitation the rights to
+use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies
+of the Software, and to permit persons to whom the Software is furnished to do
 so, subject to the following conditions:
 
-The above copyright notice and this permission notice shall be included in all 
+The above copyright notice and this permission notice shall be included in all
 copies or substantial portions of the Software.
 
-Any person wishing to distribute modifications to the Software is asked to send 
-the modifications to the original developer so that they can be incorporated 
-into the canonical version.  For software copyrighted by Julius O. Smith III, 
-email your modifications to <jos@ccrma.stanford.edu>.  This is, however, not a 
+Any person wishing to distribute modifications to the Software is asked to send
+the modifications to the original developer so that they can be incorporated
+into the canonical version.  For software copyrighted by Julius O. Smith III,
+email your modifications to <jos@ccrma.stanford.edu>.  This is, however, not a
 binding provision of this license.
 
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR 
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, 
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.  IN NO EVENT SHALL THE 
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER 
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, 
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE 
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.  IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
 --------------------------------------------------------------------------------
 
 ## LGPL License
 
-This program is free software; you can redistribute it and/or modify it under 
-the terms of the GNU Lesser General Public License as published by the Free 
-Software Foundation; either version 2.1 of the License, or (at your option) any 
+This program is free software; you can redistribute it and/or modify it under
+the terms of the GNU Lesser General Public License as published by the Free
+Software Foundation; either version 2.1 of the License, or (at your option) any
 later version.
 
-This program is distributed in the hope that it will be useful, but WITHOUT ANY 
-WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A 
+This program is distributed in the hope that it will be useful, but WITHOUT ANY
+WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
 PARTICULAR PURPOSE.  See the GNU Lesser General Public License for more details.
 
-You should have received a copy of the GNU Lesser General Public License along 
-with the GNU C Library; if not, write to the Free Software Foundation, Inc., 
+You should have received a copy of the GNU Lesser General Public License along
+with the GNU C Library; if not, write to the Free Software Foundation, Inc.,
 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
 
 --------------------------------------------------------------------------------

@@ -6,7 +6,7 @@
 //########################################################################################
 
 /************************************************************************
- ************************************************************************
+************************************************************************
 FAUST library file
 Copyright (C) 2003-2012 GRAME, Centre National de Creation Musicale
 ----------------------------------------------------------------------
@@ -35,16 +35,16 @@ compiled code. In particular the resulting compiled code has no obligation
 to be LGPL or GPL. For example you are free to choose a commercial or
 closed source license or any other license if you decide so.
 
- ************************************************************************
- ************************************************************************/
+************************************************************************
+************************************************************************/
 
-ma = library("maths.lib");
-si = library("signals.lib");
-ba = library("basics.lib");
-os = library("oscillators.lib");
-ho = library("hoa.lib");
-ro = library("routes.lib");
-de = library("delays.lib");
+ma = library("pkg:faust/faust/maths.lib@2.8.0");
+si = library("pkg:faust/faust/signals.lib@1.5.0");
+ba = library("pkg:faust/faust/basics.lib@1.18.0");
+os = library("pkg:faust/faust/oscillators.lib@1.5.1");
+ho = library("pkg:faust/faust/hoa.lib@unknown");
+ro = library("pkg:faust/faust/routes.lib@unknown");
+de = library("pkg:faust/faust/delays.lib@1.1.0");
 
 declare name "High Order Ambisonics library";
 declare version "1.4.0";
@@ -98,16 +98,16 @@ encoder(N, x, a) = encoder(N-1, x, a), x*sin(N*a), x*cos(N*a);
 //-----------------------------
 rEncoder(N, sp, a, it) = thisEncoder
 with {
-    basicEncoder(sig, angle) = ho.encoder(N, sig, angle);
-    thisEncoder = (_, rotationOrStaticAngle) : basicEncoder
-    with {
-        //converting the static angle from radians to [0; 1]
-        an = (a / (2 * ma.PI), 1) : fmod;
-        rotationOrStaticAngle = ((1-vn) * x + vn * an) * 2 * ma.PI;
-        //to manage the case where frequency is zero, smoothly switches from one mode to another//
-        vn = (sp == 0) : si.smooth(ba.tau2pole(it));
-        x = (os.phasor(1, sp), an, 1) : (+, _) : fmod;
-    };
+basicEncoder(sig, angle) = ho.encoder(N, sig, angle);
+thisEncoder = (_, rotationOrStaticAngle) : basicEncoder
+with {
+//converting the static angle from radians to [0; 1]
+an = (a / (2 * ma.PI), 1) : fmod;
+rotationOrStaticAngle = ((1-vn) * x + vn * an) * 2 * ma.PI;
+//to manage the case where frequency is zero, smoothly switches from one mode to another//
+vn = (sp == 0) : si.smooth(ba.tau2pole(it));
+x = (os.phasor(1, sp), an, 1) : (+, _) : fmod;
+};
 };
 
 
@@ -127,9 +127,9 @@ with {
 //-----------------------------
 stereoEncoder(N, a) = (leftEncoder, rightEncoder) :> si.bus(2*N+1)
 with {
-    basicEncoder(sig, angle) = ho.encoder(N, sig, angle);
-    leftEncoder = (_, a / 2) : basicEncoder;
-    rightEncoder = (_, -a /2) : basicEncoder;
+basicEncoder(sig, angle) = ho.encoder(N, sig, angle);
+leftEncoder = (_, a / 2) : basicEncoder;
+rightEncoder = (_, -a /2) : basicEncoder;
 };
 
 
@@ -151,17 +151,17 @@ with {
 //-----------------------------
 multiEncoder(N, lspeed, langle, it) = par(i, P, thisEncoder(ba.take(i+1, lspeed), ba.take(i+1, langle), it)) :> si.bus(2*N+1)
 with {
-    P = outputs(langle); //supposed to be the same as outputs(lspeed)
-    basicEncoder(sig, angle) = ho.encoder(N, sig, angle);
-    thisEncoder(sp, a, it) = (_, rotationOrStaticAngle) : basicEncoder
-    with {
-        //converting the static angle from radians to [0; 1]
-        an = (a / (2 * ma.PI), 1) : fmod;
-        rotationOrStaticAngle = ((1-vn) * x + vn * an) * 2 * ma.PI;
-        //to manage the case where frequency is zero, smoothly switches from one mode to another//
-        vn = (sp == 0) : si.smooth(ba.tau2pole(it));
-        x = (os.phasor(1, sp), an, 1) : (+, _) : fmod;
-    };
+P = outputs(langle); //supposed to be the same as outputs(lspeed)
+basicEncoder(sig, angle) = ho.encoder(N, sig, angle);
+thisEncoder(sp, a, it) = (_, rotationOrStaticAngle) : basicEncoder
+with {
+//converting the static angle from radians to [0; 1]
+an = (a / (2 * ma.PI), 1) : fmod;
+rotationOrStaticAngle = ((1-vn) * x + vn * an) * 2 * ma.PI;
+//to manage the case where frequency is zero, smoothly switches from one mode to another//
+vn = (sp == 0) : si.smooth(ba.tau2pole(it));
+x = (os.phasor(1, sp), an, 1) : (+, _) : fmod;
+};
 };
 
 
@@ -186,7 +186,7 @@ with {
 //-------------------------------------------------------------------
 decoder(N, P) = par(i, 2*N+1, _) <: par(i, P, speaker(N, 2 * ma.PI*i/P))
 with {
-    speaker(N,a) = /(2), par(i, 2*N, _), encoder(N, 2/P, a) : si.dot(2*N+1);
+speaker(N,a) = /(2), par(i, 2*N, _), encoder(N, 2/P, a) : si.dot(2*N+1);
 };
 
 
@@ -206,21 +206,21 @@ with {
 // * `N`: the ambisonic order (constant numerical expression)
 //--------------------------------------------------------------
 decoderStereo(N) = decoder(N, P) <: (par(i, 2*N+2, gainLeft(360 * i / P)) :> _),
-    (par(i, 2*N+2, gainRight(360 * i / P)) :> _)
+(par(i, 2*N+2, gainRight(360 * i / P)) :> _)
 with {
-    P = 2*N+2;
+P = 2*N+2;
 
-    gainLeft(a) = _ * sin(ratio_minus + ratio_cortex)
-    with {
-        ratio_minus = ma.PI*.5 * abs((30 + a) / 60 * ((a <= 30)) + (a - 330) / 60 * (a >= 330));
-        ratio_cortex= ma.PI*.5 * abs((120 + a) / 150 * (a > 30) * (a <= 180));
-    };
+gainLeft(a) = _ * sin(ratio_minus + ratio_cortex)
+with {
+ratio_minus = ma.PI*.5 * abs((30 + a) / 60 * ((a <= 30)) + (a - 330) / 60 * (a >= 330));
+ratio_cortex= ma.PI*.5 * abs((120 + a) / 150 * (a > 30) * (a <= 180));
+};
 
-    gainRight(a) = _ * sin(ratio_minus + ratio_cortex)
-    with {
-        ratio_minus = ma.PI*.5 * abs((390 - a) / 60 * (a >= 330) + (30 - a) / 60 * (a <= 30));
-        ratio_cortex= ma.PI*.5 * abs((180 - a) / 150 * (a < 330) * (a >= 180));
-    };
+gainRight(a) = _ * sin(ratio_minus + ratio_cortex)
+with {
+ratio_minus = ma.PI*.5 * abs((390 - a) / 60 * (a >= 330) + (30 - a) / 60 * (a <= 30));
+ratio_cortex= ma.PI*.5 * abs((180 - a) / 150 * (a < 330) * (a >= 180));
+};
 };
 
 
@@ -244,9 +244,9 @@ with {
 //-----------------------------
 iBasicDecoder(N, la, direct, shift) = (par(i, 2*N+1, _) <: par(i, P, speaker(N, ang(i))))
 with {
-    P = outputs(la);
-    ang(i) = (ba.take(i+1, la)  - direct * shift) * direct * ma.PI / 180.;
-    speaker(N,alpha) = /(2), par(i, 2*N, _), ho.encoder(N,2/P,alpha) : si.dot(2*N+1);
+P = outputs(la);
+ang(i) = (ba.take(i+1, la)  - direct * shift) * direct * ma.PI / 180.;
+speaker(N,alpha) = /(2), par(i, 2*N, _), ho.encoder(N,2/P,alpha) : si.dot(2*N+1);
 };
 
 
@@ -266,36 +266,36 @@ with {
 //-----------------------------
 circularScaledVBAP(l, t) = thisCircularVbap
 with {
-    //modulo indexes between 1 and the number of elements of the list
-    modIndex(i, l) = ma.modulo(i, outputs(l)) + 1;
-    //
-    //pick up the ith angle with a 360 degree modulo
-    getElt(i, l) = ma.modulo(ba.take(modIndex(i, l), l), 360);
-    //
-    //function to compute the sinus of the difference between angles expressed in degrees
-    diffSin(u, v) = sin((v - u) * ma.PI / 180.);
-    //
-    //permutations to be used to compute scaledVBAPGain
-    p1(a, b, c, d) = (b, c, d, a);
-    p2(a, b, c, d) = (a, c, b, d);
-    //
-    //computation of the scaled VBAP gain of a pair
-    scaledVBAPGain(t1, t2, t) = ((diffSin(t2, t) <:(_, _, _)), (ma.signum(diffSin(t2, t1)) <: (_, _)), (diffSin(t, t1) <:(_, _, _))) : (*, *, *, *) : p1 : (_, _, (+ : sqrt <: (_, _))) : p2 : (/, /);
-    sVBAPGain(i, l, t) = scaledVBAPGain(getElt(i, l), getElt(i+1, l), t);
-    //
-    //computes the left and the right gains using the matrix inversion (VBAP)
-    leftGain(i, l, t) = sVBAPGain(i, l, t) : (_, !);
-    rightGain(i, l, t) = sVBAPGain(i, l, t) : (!, _);
-    //computation of boolean activePair that determines whether the pair of LS is active or not
-    //we have to distinguish leftGain >0 and rightGain >= 0
-    //if we put >=0 for both, two pairs will be simultaneously active when theta is one of the loudspeaker angles in the list
-    //if we put > 0 for both, all the pairs will be inactive when theta is one of the loudspeaker angles in the list
-    activePair(i, l, t) = (leftGain(i, l, t) > 0) * (rightGain(i, l, t) >= 0);
-    //
-    //computes the total gain for each loudspeaker
-    cumulatedGain(i, l, t) = rightGain(outputs(l)+i-1, l, t) * activePair(outputs(l)+i-1, l, t) + leftGain(i, l, t) * activePair(i, l, t);
-    //
-    thisCircularVbap = _ <: par(i, outputs(l), *(cumulatedGain(i, l, t)));
+//modulo indexes between 1 and the number of elements of the list
+modIndex(i, l) = ma.modulo(i, outputs(l)) + 1;
+//
+//pick up the ith angle with a 360 degree modulo
+getElt(i, l) = ma.modulo(ba.take(modIndex(i, l), l), 360);
+//
+//function to compute the sinus of the difference between angles expressed in degrees
+diffSin(u, v) = sin((v - u) * ma.PI / 180.);
+//
+//permutations to be used to compute scaledVBAPGain
+p1(a, b, c, d) = (b, c, d, a);
+p2(a, b, c, d) = (a, c, b, d);
+//
+//computation of the scaled VBAP gain of a pair
+scaledVBAPGain(t1, t2, t) = ((diffSin(t2, t) <:(_, _, _)), (ma.signum(diffSin(t2, t1)) <: (_, _)), (diffSin(t, t1) <:(_, _, _))) : (*, *, *, *) : p1 : (_, _, (+ : sqrt <: (_, _))) : p2 : (/, /);
+sVBAPGain(i, l, t) = scaledVBAPGain(getElt(i, l), getElt(i+1, l), t);
+//
+//computes the left and the right gains using the matrix inversion (VBAP)
+leftGain(i, l, t) = sVBAPGain(i, l, t) : (_, !);
+rightGain(i, l, t) = sVBAPGain(i, l, t) : (!, _);
+//computation of boolean activePair that determines whether the pair of LS is active or not
+//we have to distinguish leftGain >0 and rightGain >= 0
+//if we put >=0 for both, two pairs will be simultaneously active when theta is one of the loudspeaker angles in the list
+//if we put > 0 for both, all the pairs will be inactive when theta is one of the loudspeaker angles in the list
+activePair(i, l, t) = (leftGain(i, l, t) > 0) * (rightGain(i, l, t) >= 0);
+//
+//computes the total gain for each loudspeaker
+cumulatedGain(i, l, t) = rightGain(outputs(l)+i-1, l, t) * activePair(outputs(l)+i-1, l, t) + leftGain(i, l, t) * activePair(i, l, t);
+//
+thisCircularVbap = _ <: par(i, outputs(l), *(cumulatedGain(i, l, t)));
 };
 
 
@@ -307,7 +307,7 @@ with {
 //
 // ```
 // _,_, ... : imlsDecoder(N,la, direct, shift) : _,_, ...
-// ``` 
+// ```
 //
 // Where:
 //
@@ -318,10 +318,10 @@ with {
 //-----------------------------
 imlsDecoder(N, la, direct, shift) = si.bus(2*N+1) : iVBAPDecoder
 with {
-    P = outputs(la);
-    //The VBAP decoder uses VBAP compensation: it balances the regular decoder output enabling to use irregular angular setup.
-    Q = max(2*N+2, P);
-    iVBAPDecoder = ho.decoder(N, Q) : par(i, Q, circularScaledVBAP(la, (i * 360 / Q - direct * shift) * direct)) :> si.bus(P);
+P = outputs(la);
+//The VBAP decoder uses VBAP compensation: it balances the regular decoder output enabling to use irregular angular setup.
+Q = max(2*N+2, P);
+iVBAPDecoder = ho.decoder(N, Q) : par(i, Q, circularScaledVBAP(la, (i * 360 / Q - direct * shift) * direct)) :> si.bus(P);
 };
 
 
@@ -346,19 +346,19 @@ with {
 //-----------------------------
 iDecoder(N, la, direct, shift, st, g) = thisDecoder
 with {
-    //p is the number of outputs
-    P = outputs(la);
-    ambi = 1 - st;
-    //
-    //for stereo decoding
-    paddedStereoDecoder(N, P) = (gDecoderStereo, (0 <: si.bus(P-2)))
-    with {
-        leftDispatcher = _<:(*(1-direct), *(direct));
-        rightDispatcher = _<:(*(direct), *(1-direct));
-        gDecoderStereo = ho.decoderStereo(N) : (*(g), *(g)) : (leftDispatcher, rightDispatcher) :> (_,_);
-    };
-    //
-    thisDecoder = si.bus(2*N+1) <: (si.bus(2*N+1), si.bus(2*N+1)) : (imlsDecoder(N, la, direct, shift), paddedStereoDecoder(N, P)) : (par(i, P, *(ambi)), *(st), *(st), si.bus(P-2))  :> si.bus(P) : par(i, P, *(g));
+//p is the number of outputs
+P = outputs(la);
+ambi = 1 - st;
+//
+//for stereo decoding
+paddedStereoDecoder(N, P) = (gDecoderStereo, (0 <: si.bus(P-2)))
+with {
+leftDispatcher = _<:(*(1-direct), *(direct));
+rightDispatcher = _<:(*(direct), *(1-direct));
+gDecoderStereo = ho.decoderStereo(N) : (*(g), *(g)) : (leftDispatcher, rightDispatcher) :> (_,_);
+};
+//
+thisDecoder = si.bus(2*N+1) <: (si.bus(2*N+1), si.bus(2*N+1)) : (imlsDecoder(N, la, direct, shift), paddedStereoDecoder(N, P)) : (par(i, P, *(ambi)), *(st), *(st), si.bus(P-2))  :> si.bus(P) : par(i, P, *(g));
 };
 
 
@@ -403,11 +403,11 @@ optimBasic(N) = par(i, 2*N+1, _);
 //-----------------------------------------------------
 optimMaxRe(N) = par(i, 2*N+1, optim(i, N, _))
 with {
-    optim(i, N, _)= _ * cos(indexabs / (2*N+1) * ma.PI)
-    with {
-        numberOfharmonics = 2 * N + 1;
-        indexabs = (int)((i - 1) / 2 + 1);
-    };
+optim(i, N, _)= _ * cos(indexabs / (2*N+1) * ma.PI)
+with {
+numberOfharmonics = 2 * N + 1;
+indexabs = (int)((i - 1) / 2 + 1);
+};
 };
 
 
@@ -427,12 +427,12 @@ with {
 //-----------------------------------------------------
 optimInPhase(N) = par(i, 2*N+1, optim(i, N, _))
 with {
-    optim(i, N, _)= _ * (fact(N)^2.) / (fact(N+indexabs) * fact(N-indexabs))
-    with {
-        indexabs = (int)((i - 1) / 2 + 1);
-        fact(0) = 1;
-        fact(n) = n * fact(n-1);
-    };
+optim(i, N, _)= _ * (fact(N)^2.) / (fact(N+indexabs) * fact(N-indexabs))
+with {
+indexabs = (int)((i - 1) / 2 + 1);
+fact(0) = 1;
+fact(n) = n * fact(n-1);
+};
 };
 
 
@@ -453,10 +453,10 @@ with {
 //-----------------------------
 optim(N, ot) = thisOptimizer
 with {
-    optb = (ot == 0) : si.smoo;
-    optm = (ot == 1) : si.smoo;
-    opti = (ot == 2) : si.smoo;
-    thisOptimizer = ((si.bus(2*N+1) <: ((si.bus(2*N+1):ho.optimBasic(N)), (si.bus(2*N+1):ho.optimMaxRe(N)), (si.bus(2*N+1):ho.optimInPhase(N)))), ((optb <: si.bus(2*N+1)), (optm <: si.bus(2*N+1)), (opti <: si.bus(2*N+1)))) : ro.interleave(6*N+3, 2) : par(i, 6*N+3, *) :> si.bus(2*N+1);
+optb = (ot == 0) : si.smoo;
+optm = (ot == 1) : si.smoo;
+opti = (ot == 2) : si.smoo;
+thisOptimizer = ((si.bus(2*N+1) <: ((si.bus(2*N+1):ho.optimBasic(N)), (si.bus(2*N+1):ho.optimMaxRe(N)), (si.bus(2*N+1):ho.optimInPhase(N)))), ((optb <: si.bus(2*N+1)), (optm <: si.bus(2*N+1)), (opti <: si.bus(2*N+1)))) : ro.interleave(6*N+3, 2) : par(i, 6*N+3, *) :> si.bus(2*N+1);
 };
 
 
@@ -478,17 +478,17 @@ with {
 //-----------------------------------------------------
 wider(N, w) = par(i, 2*N+1, perform(N, w, i, _))
 with {
-    perform(N, w, i, _) = _ * (log(N+1) * (1 - w) + 1) * clipweight
-    with {
-        clipweight = weighter(N, w, i) * (weighter(N, w, i) > 0) * (weighter(N, w, i) <= 1) + (weighter(N, w, i) > 1)
-        with {
-            weighter(N, w, 0) = 1.;
-            weighter(N, w, i) = (((w * log(N+1)) - log(indexabs)) / (log(indexabs+1) - log(indexabs)))
-            with {
-                indexabs = (int)((i - 1) / 2 + 1);
-            };
-        };
-    };
+perform(N, w, i, _) = _ * (log(N+1) * (1 - w) + 1) * clipweight
+with {
+clipweight = weighter(N, w, i) * (weighter(N, w, i) > 0) * (weighter(N, w, i) <= 1) + (weighter(N, w, i) > 1)
+with {
+weighter(N, w, 0) = 1.;
+weighter(N, w, i) = (((w * log(N+1)) - log(indexabs)) / (log(indexabs+1) - log(indexabs)))
+with {
+indexabs = (int)((i - 1) / 2 + 1);
+};
+};
+};
 };
 
 
@@ -528,8 +528,8 @@ mirror(N, fa) = (*(1), par(i, N, (*(fa), *(1))));
 //-----------------------------------------------------
 map(N, x, r, a) = encoder(N, x * volume(r), a) : wider(N, ouverture(r))
 with {
-    volume(r) = 1. / (r * r * (r > 1) + (r <= 1));
-    ouverture(r) = r * (r < 1) + (r >= 1);
+volume(r) = 1. / (r * r * (r > 1) + (r <= 1));
+ouverture(r) = r * (r < 1) + (r >= 1);
 };
 
 
@@ -549,13 +549,13 @@ with {
 //-----------------------------------------------------
 rotate(N, a) = par(i, 2*N+1, _) <: par(i, 2*N+1, rotation(i, a))
 with {
-    rotation(i, a) = (par(j, 2*N+1, gain1(i, j, a)), par(j, 2*N+1, gain2(i, j, a)), par(j, 2*N+1, gain3(i, j, a)) :> _)
-    with {
-        indexabs = (int)((i - 1) / 2 + 1);
-        gain1(i, j, a) = _ * cos(a * indexabs) * (j == i);
-        gain2(i, j, a) = _ * sin(a * indexabs) * (j-1 == i) * (j != 0) * (i%2 == 1);
-        gain3(i, j, a) = (_ * sin(a * indexabs)) * (j+1 == i) * (j != 0) * (i%2 == 0) * (-1);
-    };
+rotation(i, a) = (par(j, 2*N+1, gain1(i, j, a)), par(j, 2*N+1, gain2(i, j, a)), par(j, 2*N+1, gain3(i, j, a)) :> _)
+with {
+indexabs = (int)((i - 1) / 2 + 1);
+gain1(i, j, a) = _ * cos(a * indexabs) * (j == i);
+gain2(i, j, a) = _ * sin(a * indexabs) * (j-1 == i) * (j != 0) * (i%2 == 1);
+gain3(i, j, a) = (_ * sin(a * indexabs)) * (j+1 == i) * (j != 0) * (i%2 == 0) * (-1);
+};
 };
 
 
@@ -575,21 +575,21 @@ with {
 //-----------------------------
 scope(N, rt) = thisScope
 with {
-    //Angle sweeping at a speed corresponding to refresh period between 0 and 2*PI
-    theta = os.phasor(1, 1/rt) * 2 * ma.PI;
-    //we get the vector of harmonic functions thanks to the encoding function//
-    harmonicsVector = ho.encoder(N, 1, theta);
-    //
-    normalizedVector(N) = si.bus(N) <: (si.bus(N), norm) : ro.interleave(N, 2) : par(i, N, /)
-    with {
-        norm = par(i, N, _ <:(_,_) : *) :> _ : sqrt <: ((_ == 0), (_ > 0), _) : (_,*) : + <: si.bus(N);
-    };
-    //building (2N+1) normalized vectors
-    inputVector = (*(0.5), par(i, (2*N), _)) : normalizedVector(2*N+1);
-    normalizedHarmonics = harmonicsVector : normalizedVector(2*N+1);
-    //
-    rho = (inputVector, normalizedHarmonics) : si.dot(2*N+1) ;
-    thisScope = (rho <: (ma.fabs, (_ >= 0))) : ((_ <: (_,_)), _) : (*(sin(theta)), *(cos(theta)), _) : (*(-1), _,_);
+//Angle sweeping at a speed corresponding to refresh period between 0 and 2*PI
+theta = os.phasor(1, 1/rt) * 2 * ma.PI;
+//we get the vector of harmonic functions thanks to the encoding function//
+harmonicsVector = ho.encoder(N, 1, theta);
+//
+normalizedVector(N) = si.bus(N) <: (si.bus(N), norm) : ro.interleave(N, 2) : par(i, N, /)
+with {
+norm = par(i, N, _ <:(_,_) : *) :> _ : sqrt <: ((_ == 0), (_ > 0), _) : (_,*) : + <: si.bus(N);
+};
+//building (2N+1) normalized vectors
+inputVector = (*(0.5), par(i, (2*N), _)) : normalizedVector(2*N+1);
+normalizedHarmonics = harmonicsVector : normalizedVector(2*N+1);
+//
+rho = (inputVector, normalizedHarmonics) : si.dot(2*N+1) ;
+thisScope = (rho <: (ma.fabs, (_ >= 0))) : ((_ <: (_,_)), _) : (*(sin(theta)), *(cos(theta)), _) : (*(-1), _,_);
 };
 
 
@@ -645,20 +645,20 @@ with {
 //-----------------------------
 fxDecorrelation(N, d, wf, fa, fd, tf) = par(i, 2*N+1, gate(d, i, 2*N+1, fa, tf, wf, fd))
 with {
-    gate(d, i, N, fa, tf, wf, fd) = _ <: fdOverlappedDelay(dur(d, i, N, fa, tf), 262144, wf, fd) * env1(fa, i, N), _ * env1c(fa, i, N) : +;
-    //
-    fdOverlappedDelay(nsamp, nmax, freq, fdbk) = (+ : de.sdelay(nmax, int(ma.SR / freq), nsamp)) ~ (*(fdbk));
-    //
-    env1(fa, i, N) = (fa > ((N-i-1)/N)) : si.smooth(ba.tau2pole(0.005));
-    env1c(fa, i, N) = 1 - env1(fa, i, N);
-    //
-    //computes the ith duration of the ith delay in samples with twenty two possibilities of distribution
-    elemdur(d, i, p, fa, tf, ind) = (tf == ind) * (fa > (1 - x)) * d * x * fa
-    with {
-        x = th(ind, i, p);
-    };
-    //duration in samples computed as a sum of the 22 cases//
-    dur(d, i, p, fa, tf) = sum(ind, 22, elemdur(d, i, p, fa, tf, ind)) : int;
+gate(d, i, N, fa, tf, wf, fd) = _ <: fdOverlappedDelay(dur(d, i, N, fa, tf), 262144, wf, fd) * env1(fa, i, N), _ * env1c(fa, i, N) : +;
+//
+fdOverlappedDelay(nsamp, nmax, freq, fdbk) = (+ : de.sdelay(nmax, int(ma.SR / freq), nsamp)) ~ (*(fdbk));
+//
+env1(fa, i, N) = (fa > ((N-i-1)/N)) : si.smooth(ba.tau2pole(0.005));
+env1c(fa, i, N) = 1 - env1(fa, i, N);
+//
+//computes the ith duration of the ith delay in samples with twenty two possibilities of distribution
+elemdur(d, i, p, fa, tf, ind) = (tf == ind) * (fa > (1 - x)) * d * x * fa
+with {
+x = th(ind, i, p);
+};
+//duration in samples computed as a sum of the 22 cases//
+dur(d, i, p, fa, tf) = sum(ind, 22, elemdur(d, i, p, fa, tf, ind)) : int;
 };
 
 //-------`(ho.).synDecorrelation`----------
@@ -709,21 +709,21 @@ with {
 //-----------------------------
 synDecorrelation(N, d, wf, fa, fd, tf) =  _ <: par(i, 2*N+1, crossFade(d, i, 2*N+1, fa, tf, wf, fd))
 with {
-    crossFade(d, i, N, fa, tf, wf, fd) = _ <: fdOverlappedDelay(dur(d, i, N, fa, tf), 262144, wf, fd) * env1(fa, i, N), _ * env1c(fa, i, N) :> _ * env2(fa, i, N);
-    //
-    fdOverlappedDelay(nsamp, nmax, freq, fdbk) = (+ : de.sdelay(nmax, int(ma.SR / freq), nsamp)) ~ (*(fdbk));
-    //
-    env1(fa, i, N) = (fa > ((N-i-1)/N)) : si.smooth(ba.tau2pole(0.005));
-    env1c(fa, i, N) = 1 - env1(fa, i, N) ;
-    env2(fa, i, N) = ((i > 0) * N * min(fa, 1/N)) + ((i == 0) * (sqrt(N) * (1 - (N - sqrt(N)) * min(fa, 1/N)))) : si.smooth(ba.tau2pole(0.005));
-    //
-    //computes the ith duration of the ith delay in samples with twenty two possibilities of distribution
-    elemdur(d, i, p, fa, tf, ind) = (tf == ind) * fa * d * x
-    with {
-        x = th(ind, i, p);
-    };
-    //duration in samples computed as a sum of the 22 cases//
-    dur(d, i, p, fa, tf) = sum(ind, 22, elemdur(d, i, p, fa, tf, ind)) : int;
+crossFade(d, i, N, fa, tf, wf, fd) = _ <: fdOverlappedDelay(dur(d, i, N, fa, tf), 262144, wf, fd) * env1(fa, i, N), _ * env1c(fa, i, N) :> _ * env2(fa, i, N);
+//
+fdOverlappedDelay(nsamp, nmax, freq, fdbk) = (+ : de.sdelay(nmax, int(ma.SR / freq), nsamp)) ~ (*(fdbk));
+//
+env1(fa, i, N) = (fa > ((N-i-1)/N)) : si.smooth(ba.tau2pole(0.005));
+env1c(fa, i, N) = 1 - env1(fa, i, N) ;
+env2(fa, i, N) = ((i > 0) * N * min(fa, 1/N)) + ((i == 0) * (sqrt(N) * (1 - (N - sqrt(N)) * min(fa, 1/N)))) : si.smooth(ba.tau2pole(0.005));
+//
+//computes the ith duration of the ith delay in samples with twenty two possibilities of distribution
+elemdur(d, i, p, fa, tf, ind) = (tf == ind) * fa * d * x
+with {
+x = th(ind, i, p);
+};
+//duration in samples computed as a sum of the 22 cases//
+dur(d, i, p, fa, tf) = sum(ind, 22, elemdur(d, i, p, fa, tf, ind)) : int;
 };
 
 //-------`(ho.).fxRingMod`----------
@@ -768,19 +768,19 @@ with {
 //-----------------------------
 fxRingMod(N, f0, fa, tf) = par(i, 2*N+1, gate_ringmod(f0, i, 2*N+1, fa, tf))
 with {
-    //
-    env1(fa, i, N) = (fa > ((N-i-1)/N)) : si.smooth(ba.tau2pole(0.005));
-    env1c(fa, i, N) = 1 - env1(fa, i, N);
-    //
-    gate_ringmod(f, i, N, fa, tf) = _ <: _ * os.osccos(freq(f, i, N, tf)) * env1(fa, i, N), _ * env1c(fa, i, N) : +;
-    //
-    ringmodfreq(f, i, N, tf, ind) = (tf == ind) * f * x * coef
-    with {
-        x = th(ind, i, N);
-        coef = min(1, max(N * (fa - (N - i - 1) / N), 0));
-    };
-    //
-    freq(f, i, N, tf) = sum(ind, 22, ringmodfreq(f, i, N, tf, ind)) : int;
+//
+env1(fa, i, N) = (fa > ((N-i-1)/N)) : si.smooth(ba.tau2pole(0.005));
+env1c(fa, i, N) = 1 - env1(fa, i, N);
+//
+gate_ringmod(f, i, N, fa, tf) = _ <: _ * os.osccos(freq(f, i, N, tf)) * env1(fa, i, N), _ * env1c(fa, i, N) : +;
+//
+ringmodfreq(f, i, N, tf, ind) = (tf == ind) * f * x * coef
+with {
+x = th(ind, i, N);
+coef = min(1, max(N * (fa - (N - i - 1) / N), 0));
+};
+//
+freq(f, i, N, tf) = sum(ind, 22, ringmodfreq(f, i, N, tf, ind)) : int;
 };
 
 //-------`(ho.).synRingMod`----------
@@ -827,20 +827,20 @@ with {
 //-----------------------------
 synRingMod(N, f0, fa, tf) = _ <: par(i, 2*N+1, crossfade_ringmod(f0, i, 2*N+1, fa, tf))
 with {
-    //
-    env1(fa, i, N) = (fa > ((N-i-1)/N)) : si.smooth(ba.tau2pole(0.005));
-    env1c(fa, i, N) = 1 - env1(fa, i, N);
-    env2(fa, i, N) = ((i > 0) * N * min(fa, 1/N)) + ((i == 0) * (sqrt(N) * (1 - (N - sqrt(N)) * min(fa, 1/N)))) : si.smooth(ba.tau2pole(0.005));
-    //
-    crossfade_ringmod(f, i, N, fa, tf) = _ <: _ * os.osccos(freq(f, i, N, tf)) * env1(fa, i, N), _ * env1c(fa, i, N) :> _ * env2(fa, i, N);
-    //
-    ringmodfreq(f, i, N, tf, ind) = (tf == ind) * f * x * coef
-    with {
-        x = th(ind, i, N);
-        coef = min(1, max(N * (fa - (N - i - 1) / N), 0));
-    };
-    //
-    freq(f, i, N, tf) = sum(ind, 22, ringmodfreq(f, i, N, tf, ind)) : int;
+//
+env1(fa, i, N) = (fa > ((N-i-1)/N)) : si.smooth(ba.tau2pole(0.005));
+env1c(fa, i, N) = 1 - env1(fa, i, N);
+env2(fa, i, N) = ((i > 0) * N * min(fa, 1/N)) + ((i == 0) * (sqrt(N) * (1 - (N - sqrt(N)) * min(fa, 1/N)))) : si.smooth(ba.tau2pole(0.005));
+//
+crossfade_ringmod(f, i, N, fa, tf) = _ <: _ * os.osccos(freq(f, i, N, tf)) * env1(fa, i, N), _ * env1c(fa, i, N) :> _ * env2(fa, i, N);
+//
+ringmodfreq(f, i, N, tf, ind) = (tf == ind) * f * x * coef
+with {
+x = th(ind, i, N);
+coef = min(1, max(N * (fa - (N - i - 1) / N), 0));
+};
+//
+freq(f, i, N, tf) = sum(ind, 22, ringmodfreq(f, i, N, tf, ind)) : int;
 };
 
 
@@ -895,62 +895,62 @@ th(21, i, p) = sqrt(1 - ((i+1) / p - 1)^2);
 //----------------------------------------------------------------
 encoder3D(N, x, theta, phi) = par(i, (N+1) * (N+1), x * y(degree(i), order(i), theta, phi))
 with {
-    // The degree l of the harmonic[l, m]
-    degree(index) = int(sqrt(index));
-    // The order m of the harmonic[l, m]
-    order(index) = int(index - int(degree(index) * int(degree(index) + 1)));
+// The degree l of the harmonic[l, m]
+degree(index) = int(sqrt(index));
+// The order m of the harmonic[l, m]
+order(index) = int(index - int(degree(index) * int(degree(index) + 1)));
 
-    // The spherical harmonics
-    y(l, m, theta, phi) =  e(m, theta2) * k(l, m) * p(l, m, cos(phi + ma.PI * 0.5))
-    with {
-        //theta2 enables a continuous movement of elevation (when phi becomes greater than Pi/2)
-        theta2 = theta + (1 - int(fmod(fmod(phi / ma.PI - 0.5, 2) + 2, 2))) * ma.PI;
-        //
-        // The associated Legendre polynomial
-        // If l = 0   => p = 1
-        // If l = m   => p = -1 * (2 * (l-1) + 1) * sqrt(1 - cphi*cphi) * p(l-1, l-1, cphi)
-        // If l = m+1 => p = phi * (2 * (l-1) + 1) * p(l-1, l-1, cphi)
-        // Else => p = (cphi * (2 * (l-1) + 1) * p(l-1, abs(m), cphi) - ((l-1) + abs(m)) * p(l-2, abs(m), cphi)) / ((l-1) - abs(m) + 1)
-        p(l, m, cphi) = pcalcul(((l != 0) & (l == abs(m))) + ((l != 0) & (l == abs(m)+1)) * 2 + ((l != 0) & (l != abs(m)) & (l != abs(m)+1)) * 3, l, m, cphi)
-        with {
-            pcalcul(0, l, m, cphi) = 1;
-            pcalcul(1, l, m, cphi) = -1 * (2 * (l-1) + 1) * sqrt(1 - cphi*cphi) * p(l-1, l-1, cphi);
-            pcalcul(2, l, m, cphi) = cphi * (2 * (l-1) + 1) * p(l-1, l-1, cphi);
-            pcalcul(s, l, m, cphi) = (cphi * (2 * (l-1) + 1) * p(l-1, abs(m), cphi) - ((l-1) + abs(m)) * p(l-2, abs(m), cphi)) / ((l-1) - abs(m) + 1);
-        };
+// The spherical harmonics
+y(l, m, theta, phi) =  e(m, theta2) * k(l, m) * p(l, m, cos(phi + ma.PI * 0.5))
+with {
+//theta2 enables a continuous movement of elevation (when phi becomes greater than Pi/2)
+theta2 = theta + (1 - int(fmod(fmod(phi / ma.PI - 0.5, 2) + 2, 2))) * ma.PI;
+//
+// The associated Legendre polynomial
+// If l = 0   => p = 1
+// If l = m   => p = -1 * (2 * (l-1) + 1) * sqrt(1 - cphi*cphi) * p(l-1, l-1, cphi)
+// If l = m+1 => p = phi * (2 * (l-1) + 1) * p(l-1, l-1, cphi)
+// Else => p = (cphi * (2 * (l-1) + 1) * p(l-1, abs(m), cphi) - ((l-1) + abs(m)) * p(l-2, abs(m), cphi)) / ((l-1) - abs(m) + 1)
+p(l, m, cphi) = pcalcul(((l != 0) & (l == abs(m))) + ((l != 0) & (l == abs(m)+1)) * 2 + ((l != 0) & (l != abs(m)) & (l != abs(m)+1)) * 3, l, m, cphi)
+with {
+pcalcul(0, l, m, cphi) = 1;
+pcalcul(1, l, m, cphi) = -1 * (2 * (l-1) + 1) * sqrt(1 - cphi*cphi) * p(l-1, l-1, cphi);
+pcalcul(2, l, m, cphi) = cphi * (2 * (l-1) + 1) * p(l-1, l-1, cphi);
+pcalcul(s, l, m, cphi) = (cphi * (2 * (l-1) + 1) * p(l-1, abs(m), cphi) - ((l-1) + abs(m)) * p(l-2, abs(m), cphi)) / ((l-1) - abs(m) + 1);
+};
 
-        // The exponential imaginary
-        // If m > 0 => e^i*m*theta = cos(m * theta)
-        // If m < 0 => e^i*m*theta = sin(-m * theta)
-        // If m = 0 => e^i*m*theta = 1
-        e(m, theta) = ecalcul((m > 0) * 2 + (m < 0), m, theta)
-        with {
-            ecalcul(2, m, theta) = cos(m * theta);
-            ecalcul(1, m, theta) = sin(abs(m) * theta);
-            ecalcul(s, m, theta) = 1;
-        }; 
-        
-        // The normalization
-        // If m  = 0 => k(l, m) = 1
-        // If m != 0 => k(l, m) = sqrt((l - abs(m))! / l + abs(m))!) * sqrt(2)
-        k(l, m) = kcalcul((m != 0), l, m)
-        with {
-            kcalcul(0, l, m) = 1;
-            kcalcul(1, l, m) = sqrt(2) / sqrtFactQuotient(l+abs(m), l-abs(m))
-            with {
-                //factorial quotient fq(n, p)=n! / p! = n(n-1)...(p+1) when n > p
-                //enables factor simplification
-                //and considering the square root of a product as a product of square roots
-                sqrtFactQuotient(n, p) = sqrtProd(n-p, p)
-                with {
-                    //sqrtProd(n, p) computes the product sqrt(p+1) x sqrt(p+2) x ... x sqrt(n)
-                    //to enable factorial quotient simplification
-                    sqrtProd(1, p) = sqrt(p+1);
-                    sqrtProd(n, p) = sqrt(p+n) * sqrtProd(n-1, p);
-                };
-            };
-        };
-    };
+// The exponential imaginary
+// If m > 0 => e^i*m*theta = cos(m * theta)
+// If m < 0 => e^i*m*theta = sin(-m * theta)
+// If m = 0 => e^i*m*theta = 1
+e(m, theta) = ecalcul((m > 0) * 2 + (m < 0), m, theta)
+with {
+ecalcul(2, m, theta) = cos(m * theta);
+ecalcul(1, m, theta) = sin(abs(m) * theta);
+ecalcul(s, m, theta) = 1;
+};
+
+// The normalization
+// If m  = 0 => k(l, m) = 1
+// If m != 0 => k(l, m) = sqrt((l - abs(m))! / l + abs(m))!) * sqrt(2)
+k(l, m) = kcalcul((m != 0), l, m)
+with {
+kcalcul(0, l, m) = 1;
+kcalcul(1, l, m) = sqrt(2) / sqrtFactQuotient(l+abs(m), l-abs(m))
+with {
+//factorial quotient fq(n, p)=n! / p! = n(n-1)...(p+1) when n > p
+//enables factor simplification
+//and considering the square root of a product as a product of square roots
+sqrtFactQuotient(n, p) = sqrtProd(n-p, p)
+with {
+//sqrtProd(n, p) computes the product sqrt(p+1) x sqrt(p+2) x ... x sqrt(n)
+//to enable factorial quotient simplification
+sqrtProd(1, p) = sqrt(p+1);
+sqrtProd(n, p) = sqrt(p+n) * sqrtProd(n-1, p);
+};
+};
+};
+};
 };
 
 
@@ -977,16 +977,16 @@ with {
 //-----------------------------
 rEncoder3D(N, azsp, elsp, az, el, it) = this3DEncoder
 with {
-    basic3DEncoder(sig, ang1, ang2) = encoder3D(N, sig, ang1, ang2);
-    this3DEncoder = (_, rotationOrStaticAzim, rotationOrStaticElev) : basic3DEncoder
-    with {
-        x1 = (os.phasor(1, azsp), az, 1) : (+, _) : fmod : *(2 * ma.PI);
-        vn1 = (azsp == 0) : si.smooth(ba.tau2pole(it));
-        rotationOrStaticAzim = (1-vn1) * x1 + vn1 * az;
-        x2 = (os.phasor(1, elsp), el, 1) : (+, _) : fmod : *(2 * ma.PI);
-        vn2 = (elsp == 0) : si.smooth(ba.tau2pole(it));
-        rotationOrStaticElev =  (1-vn2) * x2 + vn2 * el;
-    };
+basic3DEncoder(sig, ang1, ang2) = encoder3D(N, sig, ang1, ang2);
+this3DEncoder = (_, rotationOrStaticAzim, rotationOrStaticElev) : basic3DEncoder
+with {
+x1 = (os.phasor(1, azsp), az, 1) : (+, _) : fmod : *(2 * ma.PI);
+vn1 = (azsp == 0) : si.smooth(ba.tau2pole(it));
+rotationOrStaticAzim = (1-vn1) * x1 + vn1 * az;
+x2 = (os.phasor(1, elsp), el, 1) : (+, _) : fmod : *(2 * ma.PI);
+vn2 = (elsp == 0) : si.smooth(ba.tau2pole(it));
+rotationOrStaticElev =  (1-vn2) * x2 + vn2 * el;
+};
 };
 
 
@@ -1024,9 +1024,9 @@ optimBasic3D(N) = par(i, (N+1) * (N+1), _);
 //-----------------------------------------------------
 optimMaxRe3D(N) = par(i, (N+1) * (N+1), MaxRe(N, degree(i), _))
 with {
-    // The degree l of the harmonic[l, m]
-    degree(index)  = int(sqrt(index));
-    MaxRe(N, l, _)= _ * cos(l / (2*N+2) * ma.PI);
+// The degree l of the harmonic[l, m]
+degree(index)  = int(sqrt(index));
+MaxRe(N, l, _)= _ * cos(l / (2*N+2) * ma.PI);
 };
 
 
@@ -1046,13 +1046,13 @@ with {
 //-----------------------------------------------------
 optimInPhase3D(N) = par(i, (N+1) * (N+1), InPhase(N, degree(i), _))
 with {
-    // The degree l of the harmonic[l, m]
-    degree(index)  = int(sqrt(index));
-    InPhase(N, l, _)= _ * (fact(N) * fact(N)) / (fact(N - l) * fact(N + l))
-    with {
-        fact(0) = 1;
-        fact(n) = n * fact(n-1);
-    };
+// The degree l of the harmonic[l, m]
+degree(index)  = int(sqrt(index));
+InPhase(N, l, _)= _ * (fact(N) * fact(N)) / (fact(N - l) * fact(N + l))
+with {
+fact(0) = 1;
+fact(n) = n * fact(n-1);
+};
 };
 
 
@@ -1073,9 +1073,9 @@ with {
 //-----------------------------
 optim3D(N, ot) = thisOptimizer
 with {
-    optb = (ot == 0) : si.smoo;
-    optm = (ot == 1) : si.smoo;
-    opti = (ot == 2) : si.smoo;
-    bus3D = si.bus((N+1)*(N+1));
-    thisOptimizer = ((bus3D  <: ((bus3D:ho.optimBasic3D(N)), (bus3D:ho.optimMaxRe3D(N)), (bus3D:ho.optimInPhase3D(N)))), ((optb <: bus3D), (optm <: bus3D), (opti <: bus3D))) : ro.interleave(3*(N+1)*(N+1), 2) : par(i, 3*(N+1)*(N+1), *) :> bus3D;
+optb = (ot == 0) : si.smoo;
+optm = (ot == 1) : si.smoo;
+opti = (ot == 2) : si.smoo;
+bus3D = si.bus((N+1)*(N+1));
+thisOptimizer = ((bus3D  <: ((bus3D:ho.optimBasic3D(N)), (bus3D:ho.optimMaxRe3D(N)), (bus3D:ho.optimInPhase3D(N)))), ((optb <: bus3D), (optm <: bus3D), (opti <: bus3D))) : ro.interleave(3*(N+1)*(N+1), 2) : par(i, 3*(N+1)*(N+1), *) :> bus3D;
 };

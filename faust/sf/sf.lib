@@ -1,24 +1,24 @@
-/* 
-  sf.lib - aliases all prefixes to sf = all.lib, so that both old and new prefixes can be mixed.
+/*
+sf.lib - aliases all prefixes to sf = all.lib, so that both old and new prefixes can be mixed.
 
-  USAGE:
+USAGE:
 
-  import("sf.lib");  // use either standard prefixes or the one prefix "sf"
+import("sf.lib");  // use either standard prefixes or the one prefix "sf"
 
-  The Faust team is committed to unique names for standard Faust
-  functions, allowing them to all be in the same namespace.
-  Therefore, only two namespaces are needed: (1) the highest-level
-  scope (no prefix), and (2) the Standard Faust scope, using prefix 'sf'.
+The Faust team is committed to unique names for standard Faust
+functions, allowing them to all be in the same namespace.
+Therefore, only two namespaces are needed: (1) the highest-level
+scope (no prefix), and (2) the Standard Faust scope, using prefix 'sf'.
 */
 
-sf = library("all.lib"); // "Standard Faust" prefix
+sf = library("pkg:faust/faust/all.lib@unknown");
 
 //--- use old library prefixes using old libraries ---
 /*
-    ml = library("old/music.lib");
-    fl = library("old/filter.lib");
-    ol = library("old/oscillator.lib");
-    el = library("old/effect.lib");
+ml = library("old/music.lib");
+fl = library("old/filter.lib");
+ol = library("old/oscillator.lib");
+el = library("old/effect.lib");
 */
 //--- use old library prefixes using new libraries ---
 ol = sf;

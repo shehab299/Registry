@@ -41,11 +41,11 @@ closed source license or any other license if you decide so.
 ************************************************************************
 ************************************************************************/
 
-aa = library("aanl.lib");
-ma = library("maths.lib");
-ba = library("basics.lib");
-si = library("signals.lib");
-it = library("interpolators.lib");
+aa = library("pkg:faust/faust/aanl.lib@1.0.0");
+ma = library("pkg:faust/faust/maths.lib@2.8.0");
+ba = library("pkg:faust/faust/basics.lib@1.18.0");
+si = library("pkg:faust/faust/signals.lib@1.5.0");
+it = library("pkg:faust/faust/interpolators.lib@1.3.1");
 
 declare name "Faust Envelope Library";
 declare version "1.3.0";
@@ -77,31 +77,31 @@ declare ar author "Yann Orlarey, Stéphane Letz";
 ar(at,rt,gate) = AR : max(0)
 with {
 
-    // Durations in samples
-    an = max(1, at*ma.SR);
-    rn = max(1, rt*ma.SR);
+// Durations in samples
+an = max(1, at*ma.SR);
+rn = max(1, rt*ma.SR);
 
-    // Deltas per samples
-    adelta = 1/an;
-    rdelta = 1/rn;
+// Deltas per samples
+adelta = 1/an;
+rdelta = 1/rn;
 
-    // Attack time (starts at gate upfront and raises infinitely)
-    atime = (raise*reset + upfront) ~ _
-    with {
-        upfront = gate > gate';
-        reset = gate <= gate';
-        raise(x) = (x + (x > 0));
-    };
+// Attack time (starts at gate upfront and raises infinitely)
+atime = (raise*reset + upfront) ~ _
+with {
+upfront = gate > gate';
+reset = gate <= gate';
+raise(x) = (x + (x > 0));
+};
 
-    // Attack curve
-    A = atime * adelta;
+// Attack curve
+A = atime * adelta;
 
-    // Release curve
-    D0 = 1 + an * rdelta;
-    D = D0 - atime * rdelta;
+// Release curve
+D0 = 1 + an * rdelta;
+D = D0 - atime * rdelta;
 
-    // AR part
-    AR = min(A, D);
+// AR part
+AR = min(A, D);
 
 };
 
@@ -128,28 +128,28 @@ declare asr author "Yann Orlarey, Stéphane Letz";
 asr(at,sl,rt,gate) = AS - R : max(0)
 with {
 
-    // Durations in samples
-    an = max(1, at*ma.SR);
-    rn = max(1, rt*ma.SR);
+// Durations in samples
+an = max(1, at*ma.SR);
+rn = max(1, rt*ma.SR);
 
-    // Deltas per samples
-    adelta = sl/an;
-    rdelta = sl/rn;
+// Deltas per samples
+adelta = sl/an;
+rdelta = sl/rn;
 
-    // Attack time (starts when gate changes and raises until gate == 0)
-    atime = +(gate) ~ *(gate' >= gate);
+// Attack time (starts when gate changes and raises until gate == 0)
+atime = +(gate) ~ *(gate' >= gate);
 
-    // Attack curve
-    A = atime * adelta;
+// Attack curve
+A = atime * adelta;
 
-    // AS part
-    AS = min(A, sl);
+// AS part
+AS = min(A, sl);
 
-    // Release time starts when gate is 0
-    rtime = (+(1) : *(gate == 0)) ~ _;
+// Release time starts when gate is 0
+rtime = (+(1) : *(gate == 0)) ~ _;
 
-    // Release curve starts when gate is 0 with the current value of the envelope
-    R = rtime * rdelta;
+// Release curve starts when gate is 0 with the current value of the envelope
+R = rtime * rdelta;
 
 };
 
@@ -177,168 +177,168 @@ declare adsr author "Yann Orlarey and Andrey Bundin";
 adsr(at,dt,sl,rt,gate) = ADS : *(1-R) : max(0)
 with {
 
-    // Durations in samples
-    an = max(1, at*ma.SR);
-    dn = max(1, dt*ma.SR);
-    rn = max(1, rt*ma.SR);
+// Durations in samples
+an = max(1, at*ma.SR);
+dn = max(1, dt*ma.SR);
+rn = max(1, rt*ma.SR);
 
-    // Deltas per samples
-    adelta = 1/an;
-    ddelta = (1-sl)/dn;
+// Deltas per samples
+adelta = 1/an;
+ddelta = (1-sl)/dn;
 
-    // Attack time (starts when gate changes and raises until gate == 0)
-    atime = +(gate) ~ *(gate' >= gate);
+// Attack time (starts when gate changes and raises until gate == 0)
+atime = +(gate) ~ *(gate' >= gate);
 
-    // Attack curve
-    A = atime * adelta;
+// Attack curve
+A = atime * adelta;
 
-    // Decay curve
-    D0 = 1 + an * ddelta;
-    D = D0 - atime * ddelta;
+// Decay curve
+D0 = 1 + an * ddelta;
+D = D0 - atime * ddelta;
 
-    // ADS part
-    ADS = min(A, max(D, sl));
+// ADS part
+ADS = min(A, max(D, sl));
 
-    // Release time starts when gate is 0
-    rtime = (+(1) : *(gate == 0)) ~ _;
+// Release time starts when gate is 0
+rtime = (+(1) : *(gate == 0)) ~ _;
 
-    // Release curve starts when gate is 0 with the current value of the envelope
-    R = rtime/rn;
+// Release curve starts when gate is 0 with the current value of the envelope
+R = rtime/rn;
 
 };
 
 
 adsr_bias_env = environment
 {
-  // In the functions below, we use the equation `y=bias_curve(b,x)`.
-  // `b`: bias between 0 and 1. Bias of 0.5 results in `y=x`. Bias above 0.5 pulls y upward.
-  // `x`: input between 0 and 1 that needs to be remapped/biased into `y`
-  // `y`: `x` after it has been biased. Note that `(y==0 iff x==0) AND (y==1 iff x==1)`.
-  bias_curve(b,x) = (x / ((((1.0/b) - 2.0)*(1.0 - x))+1.0));
+// In the functions below, we use the equation `y=bias_curve(b,x)`.
+// `b`: bias between 0 and 1. Bias of 0.5 results in `y=x`. Bias above 0.5 pulls y upward.
+// `x`: input between 0 and 1 that needs to be remapped/biased into `y`
+// `y`: `x` after it has been biased. Note that `(y==0 iff x==0) AND (y==1 iff x==1)`.
+bias_curve(b,x) = (x / ((((1.0/b) - 2.0)*(1.0 - x))+1.0));
 
-  // d/dx of bias_curve(b,x)
-  bias_curve_d_dx(b, x) = 0-(-1+b)*b/((1-x+b*(-1+2*x))^2);
+// d/dx of bias_curve(b,x)
+bias_curve_d_dx(b, x) = 0-(-1+b)*b/((1-x+b*(-1+2*x))^2);
 
-  // Solve for x in y=bias_curve(b,x)
-  bias_curve_inverse(b,y) = (b-1)*y / (2*b*y-b-y);
+// Solve for x in y=bias_curve(b,x)
+bias_curve_inverse(b,y) = (b-1)*y / (2*b*y-b-y);
 
-  // We don't allow the bias to be too close to 0 or 1 because it leads to slopes too
-  // close to positive or negative infinity.
-  bias_clip = aa.clip(.03, .97);
+// We don't allow the bias to be too close to 0 or 1 because it leads to slopes too
+// close to positive or negative infinity.
+bias_clip = aa.clip(.03, .97);
 
-  adsr_bias(att, dec, sus, rel, final, bias_att, bias_dec, bias_rel, legato, gate) = envelope 
-  with {
-    ugate = gate>0;
+adsr_bias(att, dec, sus, rel, final, bias_att, bias_dec, bias_rel, legato, gate) = envelope
+with {
+ugate = gate>0;
 
-    fb(_state, _y) = nextState, nextY
-    with {
-      // Legato control
-      onset = ba.impulsify(ugate);
-      state = select2(onset, _state, 0), _state : select2(legato);
+fb(_state, _y) = nextState, nextY
+with {
+// Legato control
+onset = ba.impulsify(ugate);
+state = select2(onset, _state, 0), _state : select2(legato);
 
-      // two conditions in which we want to hard-reset the `y` to `final`
-      // instead of using the previous `_y`.
-      y = ba.if((onset & (legato<0.5)) | (ba.time==0), final, _y);
-      // note that if final is a constant zero then this could simply be
-      // y = ba.if(onset & (legato<0.5), 0, _y);
+// two conditions in which we want to hard-reset the `y` to `final`
+// instead of using the previous `_y`.
+y = ba.if((onset & (legato<0.5)) | (ba.time==0), final, _y);
+// note that if final is a constant zero then this could simply be
+// y = ba.if(onset & (legato<0.5), 0, _y);
 
-      // State 0: release
-      // State 1: attack
-      // State 2: decay 
+// State 0: release
+// State 1: attack
+// State 2: decay
 
-      y_at_release = ba.if(ba.time==0,1,y) : ba.latch(gate==0);
-      // note that if final is a constant zero then this could simply be
-      // y_at_release = y : ba.latch(gate==0);
+y_at_release = ba.if(ba.time==0,1,y) : ba.latch(gate==0);
+// note that if final is a constant zero then this could simply be
+// y_at_release = y : ba.latch(gate==0);
 
-      // Slope is a y-distance divided by a number of samples
-      att_slope = (1-final) / max(1,(att*ma.SR));
-      dec_slope = (sus-1) / max(1,(dec*ma.SR));
-      rel_slope = (final-y_at_release) / max(1,(rel*ma.SR));
+// Slope is a y-distance divided by a number of samples
+att_slope = (1-final) / max(1,(att*ma.SR));
+dec_slope = (sus-1) / max(1,(dec*ma.SR));
+rel_slope = (final-y_at_release) / max(1,(rel*ma.SR));
 
-      // Get bias based on the state, then clip for safety.
-      b = bias_rel, bias_att, bias_dec : select3(state) : bias_clip;
+// Get bias based on the state, then clip for safety.
+b = bias_rel, bias_att, bias_dec : select3(state) : bias_clip;
 
-      // We will remap from an input domain to [0..1] based on the current state.
-      from1 = ba.if(state==2, sus, final);
-      from2 = ba.if(state==0, y_at_release, 1);
+// We will remap from an input domain to [0..1] based on the current state.
+from1 = ba.if(state==2, sus, final);
+from2 = ba.if(state==0, y_at_release, 1);
 
-      // Prevent divide-by-zero in it.remap
-      pct = it.remap(from1, from2, 0, 1, y), 0.5 : select2(from1==from2) : bias_curve_inverse(b);
-      
-      slope = rel_slope, att_slope, dec_slope : select3(state) : _*bias_curve_d_dx(b, pct);
-          
-      nextY = y + slope : aa.clip(from1, 1);
-      nextState = select2(ugate,
-        0,
-        select3(state,
-          1,
-          select2(y < 1.0, 2, 1),
-          2
-        )
-      );
-    };
-    envelope = fb ~ (_,_) : !, _;
-  };
+// Prevent divide-by-zero in it.remap
+pct = it.remap(from1, from2, 0, 1, y), 0.5 : select2(from1==from2) : bias_curve_inverse(b);
 
-  ahdsr_bias(att, hol, dec, sus, rel, final, bias_att, bias_dec, bias_rel, legato, gate) = envelope 
-  with {
-    ugate = gate>0;
+slope = rel_slope, att_slope, dec_slope : select3(state) : _*bias_curve_d_dx(b, pct);
 
-    fb(_state, _y) = nextState, nextY
-    with {
-      // Legato control
-      onset = ba.impulsify(ugate);
-      state = select2(onset, _state, 0), _state : select2(legato);
+nextY = y + slope : aa.clip(from1, 1);
+nextState = select2(ugate,
+0,
+select3(state,
+1,
+select2(y < 1.0, 2, 1),
+2
+)
+);
+};
+envelope = fb ~ (_,_) : !, _;
+};
 
-      // two conditions in which we want to hard-reset the `y` to `final`
-      // instead of using the previous `_y`.
-      y = ba.if((onset & (legato<0.5)) | (ba.time==0), final, _y);
-      // note that if final is a constant zero then this could simply be
-      // y = ba.if(onset & (legato<0.5), 0, _y);
+ahdsr_bias(att, hol, dec, sus, rel, final, bias_att, bias_dec, bias_rel, legato, gate) = envelope
+with {
+ugate = gate>0;
 
-      // State 0: release
-      // State 1: attack
-      // State 2: hold
-      // State 3: decay 
+fb(_state, _y) = nextState, nextY
+with {
+// Legato control
+onset = ba.impulsify(ugate);
+state = select2(onset, _state, 0), _state : select2(legato);
 
-      y_at_release = ba.if(ba.time==0,1,y) : ba.latch(gate==0);
-      // note that if final is a constant zero then this could simply be
-      // y_at_release = y : ba.latch(gate==0);
+// two conditions in which we want to hard-reset the `y` to `final`
+// instead of using the previous `_y`.
+y = ba.if((onset & (legato<0.5)) | (ba.time==0), final, _y);
+// note that if final is a constant zero then this could simply be
+// y = ba.if(onset & (legato<0.5), 0, _y);
 
-      // Slope is a y-distance divided by a number of samples
-      att_slope = (1-final) / max(1,(att*ma.SR));
-      hold_slope = ba.if(gate, att_slope, rel_slope);
-      dec_slope = (sus-1) / max(1,(dec*ma.SR));
-      rel_slope = (final-y_at_release) / max(1,(rel*ma.SR));
+// State 0: release
+// State 1: attack
+// State 2: hold
+// State 3: decay
 
-      // Get bias based on the state, then clip for safety.
-      // Note that for the hold state, we choose a bias of 0.5 (the middle value).
-      b = bias_rel, bias_att, .5, bias_dec : ba.selectn(4, state) : bias_clip;
+y_at_release = ba.if(ba.time==0,1,y) : ba.latch(gate==0);
+// note that if final is a constant zero then this could simply be
+// y_at_release = y : ba.latch(gate==0);
 
-      from1 = ba.if(state==3, sus, final);
-      from2 = ba.if(state==0, y_at_release, 1);
+// Slope is a y-distance divided by a number of samples
+att_slope = (1-final) / max(1,(att*ma.SR));
+hold_slope = ba.if(gate, att_slope, rel_slope);
+dec_slope = (sus-1) / max(1,(dec*ma.SR));
+rel_slope = (final-y_at_release) / max(1,(rel*ma.SR));
 
-      // Prevent divide-by-zero in it.remap
-      pct = it.remap(from1, from2, 0, 1, y), 0.5 : select2(from1==from2) : bias_curve_inverse(b);
-      
-      slope = rel_slope, att_slope, hold_slope, dec_slope : ba.selectn(4, state) : _*bias_curve_d_dx(b, pct);
+// Get bias based on the state, then clip for safety.
+// Note that for the hold state, we choose a bias of 0.5 (the middle value).
+b = bias_rel, bias_att, .5, bias_dec : ba.selectn(4, state) : bias_clip;
 
-      hold_time = ma.SR * hol;
-      hold_timer = ugate : +~(*(ugate * (state != 1)));
-          
-      nextY = y + slope : aa.clip(from1, 1);
-      nextState = select2(ugate,
-        0,
-        ba.selectn(4, state,
-          1,
-          select2(y < 1.0, 2, 1),
-          select2(hold_timer < hold_time, 3, 2),
-          3
-        )
-      );
-    };
-    envelope = fb ~ (_,_) : !, _;
-  };
+from1 = ba.if(state==3, sus, final);
+from2 = ba.if(state==0, y_at_release, 1);
+
+// Prevent divide-by-zero in it.remap
+pct = it.remap(from1, from2, 0, 1, y), 0.5 : select2(from1==from2) : bias_curve_inverse(b);
+
+slope = rel_slope, att_slope, hold_slope, dec_slope : ba.selectn(4, state) : _*bias_curve_d_dx(b, pct);
+
+hold_time = ma.SR * hol;
+hold_timer = ugate : +~(*(ugate * (state != 1)));
+
+nextY = y + slope : aa.clip(from1, 1);
+nextState = select2(ugate,
+0,
+ba.selectn(4, state,
+1,
+select2(y < 1.0, 2, 1),
+select2(hold_timer < hold_time, 3, 2),
+3
+)
+);
+};
+envelope = fb ~ (_,_) : !, _;
+};
 };
 
 
@@ -477,14 +477,14 @@ declare smoothEnvelope author "Romain Michon";
 smoothEnvelope(ar,t) = t : si.smooth(ba.tau2pole(ar));
 
 // Generic form to be specialized
-// Author: JOS, revised by Stephane Letz 
-asrfe(attT60,susLvl,relT60,finLvl,gate) = envelope 
+// Author: JOS, revised by Stephane Letz
+asrfe(attT60,susLvl,relT60,finLvl,gate) = envelope
 with {
-  ugate = gate>0;
-  target = select2(ugate, finLvl, susLvl*float(ugate));
-  t60 = select2(ugate, relT60, attT60);
-  pole = ba.tau2pole(t60/6.91);
-  envelope = target : si.smooth(pole);
+ugate = gate>0;
+target = select2(ugate, finLvl, susLvl*float(ugate));
+t60 = select2(ugate, relT60, attT60);
+pole = ba.tau2pole(t60/6.91);
+envelope = target : si.smooth(pole);
 };
 
 
@@ -580,18 +580,18 @@ asre(attT60,susLvl,relT60,gate) = asrfe(attT60,susLvl,relT60,0.0,gate);
 declare adsre author "Julius O. Smith III";
 declare adsre licence "STK-4.3";
 
-adsre(attT60,decT60,susLvl,relT60,gate) = envelope 
+adsre(attT60,decT60,susLvl,relT60,gate) = envelope
 with {
-  ugate = gate>0;
-  samps = ugate : +~(*(ugate)); // ramp time in samples
-  attSamps = int(attT60 * ma.SR);
-  // if attSamps==0, go straight into the decay phase
-  attPhase = (samps<attSamps) | (ugate:ba.impulsify);
-  target = select2(ugate, 0.0,
-           select2(attPhase, susLvl*float(ugate), ugate));
-  t60 = select2(ugate, relT60, select2(attPhase, decT60, attT60));
-  pole = ba.tau2pole(t60/6.91);
-  envelope = target : si.smooth(pole);
+ugate = gate>0;
+samps = ugate : +~(*(ugate)); // ramp time in samples
+attSamps = int(attT60 * ma.SR);
+// if attSamps==0, go straight into the decay phase
+attPhase = (samps<attSamps) | (ugate:ba.impulsify);
+target = select2(ugate, 0.0,
+select2(attPhase, susLvl*float(ugate), ugate));
+t60 = select2(ugate, relT60, select2(attPhase, decT60, attT60));
+pole = ba.tau2pole(t60/6.91);
+envelope = target : si.smooth(pole);
 };
 
 
@@ -618,19 +618,19 @@ with {
 declare ahdsre author "Julius O. Smith III, David Braun";
 declare ahdsre licence "STK-4.3";
 
-ahdsre(attT60,htT60,decT60,susLvl,relT60,gate) = envelope 
+ahdsre(attT60,htT60,decT60,susLvl,relT60,gate) = envelope
 with {
-  ugate = gate>0;
-  samps = ugate : +~(*(ugate)); // ramp time in samples
-  attSamps = int(attT60 * ma.SR);
-  holdSamps = int((attT60+htT60)*ma.SR);
-  attPhase = (samps<attSamps) | (ugate:ba.impulsify);
-  holdPhase = (samps<holdSamps) & ugate;
-  target = select2(ugate, 0.0,
-           select2(holdPhase, susLvl*float(ugate), ugate));
-  t60 = select2(ugate, relT60, select2(holdPhase, decT60, attT60));
-  pole = ba.tau2pole(t60/6.91);
-  envelope = target : si.smooth(pole);
+ugate = gate>0;
+samps = ugate : +~(*(ugate)); // ramp time in samples
+attSamps = int(attT60 * ma.SR);
+holdSamps = int((attT60+htT60)*ma.SR);
+attPhase = (samps<attSamps) | (ugate:ba.impulsify);
+holdPhase = (samps<holdSamps) & ugate;
+target = select2(ugate, 0.0,
+select2(holdPhase, susLvl*float(ugate), ugate));
+t60 = select2(ugate, relT60, select2(holdPhase, decT60, attT60));
+pole = ba.tau2pole(t60/6.91);
+envelope = target : si.smooth(pole);
 };
 
 
@@ -654,13 +654,13 @@ declare dx7envelope author "Romain Michon";
 
 dx7envelope(R1,R2,R3,R4,L1,L2,L3,L4,t) = up*on : ba.sAndH(on) : down
 with {
-  on = t>0;
-  off = t==0;
-  rs1 = R1*ma.SR;
-  rs2 = R2*ma.SR;
-  rs3 = R3*ma.SR;
-  rs4 = R4*ma.SR;
-  up = ba.countup(rs1+rs2+rs3,off) : ba.bpf.start(0,L4) : ba.bpf.point(rs1,L1) :
-  ba.bpf.point(rs1+rs2,L2) : ba.bpf.end(rs1+rs2+rs3,L3);
-  down = _,ba.countup(rs4,on) : ba.bpf.start(0) : ba.bpf.end(rs4,L4);
+on = t>0;
+off = t==0;
+rs1 = R1*ma.SR;
+rs2 = R2*ma.SR;
+rs3 = R3*ma.SR;
+rs4 = R4*ma.SR;
+up = ba.countup(rs1+rs2+rs3,off) : ba.bpf.start(0,L4) : ba.bpf.point(rs1,L1) :
+ba.bpf.point(rs1+rs2,L2) : ba.bpf.end(rs1+rs2+rs3,L3);
+down = _,ba.countup(rs4,on) : ba.bpf.start(0) : ba.bpf.end(rs4,L4);
 };

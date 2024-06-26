@@ -5,11 +5,11 @@
 // * <https://github.com/grame-cncm/faustlibraries/blob/master/noises.lib>
 //########################################################################################
 
-ma = library("maths.lib");
-ba = library("basics.lib");
-fi = library("filters.lib");
-os = library("oscillators.lib");
-no = library("noises.lib"); // for compatible copy/paste out of this file
+ma = library("pkg:faust/faust/maths.lib@2.8.0");
+ba = library("pkg:faust/faust/basics.lib@1.18.0");
+fi = library("pkg:faust/faust/filters.lib@1.3.0");
+os = library("pkg:faust/faust/oscillators.lib@1.5.1");
+no = library("pkg:faust/faust/noises.lib@1.4.1");
 
 declare name "Faust Noise Generator Library";
 declare version "1.4.1";
@@ -55,22 +55,22 @@ closed source license or any other license if you decide so.
 
 noise_env(seed) = environment {
 
-	RANDMAX	= 2147483647.0; // = 2^31-1 = MAX_SIGNED_INT in 32 bits
-	
-	noise = random / RANDMAX
-	with {
-		random = +(seed) ~ *(1103515245); // "linear congruential"
-	};	
-	
-	multirandom(N) = randomize(N) ~_
-	with {
-		randomize(1) = +(seed) : *(1103515245);
-		randomize(N) = randomize(1) <: randomize(N-1),_;
-	};
-	
-	multinoise(N) = multirandom(N) : par(i, N, /(RANDMAX)) : par(i, N, float);
-	
-	noises(N,i) = multinoise(N) : ba.selector(i,N);
+RANDMAX	= 2147483647.0; // = 2^31-1 = MAX_SIGNED_INT in 32 bits
+
+noise = random / RANDMAX
+with {
+random = +(seed) ~ *(1103515245); // "linear congruential"
+};
+
+multirandom(N) = randomize(N) ~_
+with {
+randomize(1) = +(seed) : *(1103515245);
+randomize(N) = randomize(1) <: randomize(N-1),_;
+};
+
+multinoise(N) = multirandom(N) : par(i, N, /(RANDMAX)) : par(i, N, float);
+
+noises(N,i) = multinoise(N) : ba.selector(i,N);
 
 };
 
@@ -138,7 +138,7 @@ noises(N,i) = noise_env(12345).noises(N,i);
 
 //-----------------------`(no.)randomseed`------------------------
 // A random seed based on the foreign function `arc4random`
-// (see man arc4random). Used in `rnoise`, `rmultirandom`, etc. to 
+// (see man arc4random). Used in `rnoise`, `rmultirandom`, etc. to
 // avoid having the same pseudo random sequence at each run.
 //
 // WARNING: using the foreign function `arc4random`, so only available in C/C++ and LLVM backends.
@@ -281,7 +281,7 @@ Michon and/or Julius O. Smith III, and are released under the
 // <img alt="pink_noise_demo figure" src="https://ccrma.stanford.edu/wiki/Images/8/86/Tpinkd.jpg" width="600" />
 //------------------------------------------------------------
 pink_filter = fi.iir((0.049922035, -0.095993537, 0.050612699, -0.004408786),
-                    (-2.494956002, 2.017265875, -0.522189400));
+(-2.494956002, 2.017265875, -0.522189400));
 
 pink_noise = noise : pink_filter;
 
@@ -309,7 +309,7 @@ pink_noise_m = pink_noise * 12.5; // Equalizes loudness to that of no.noise (tha
 //------------------------------------------------------------
 pink_noise_vm(N) = noise <: _,par(i,N,ba.latch(clock(i))) :> _
 with {
-	clock(i) = (ba.time>>i)&1; // i'th latch clock signal
+clock(i) = (ba.time>>i)&1; // i'th latch clock signal
 };
 
 
@@ -362,13 +362,13 @@ lfnoise(freq) = lfnoise0(freq) : seq(i,5,fi.lowpass(1,freq)); // non-overshootin
 //------------------------------------------------------------
 sparse_noise(f0) = sn
 with {
-    saw = os.lf_sawpos(f0);
-    sawdiff = saw - saw';
-    e = float(no.noise); // float() keeps 4.656613e-10f scaling here instead of later
-    eHeld = e : ba.latch(sawdiff);
-    eHeldPos = 0.5 + 0.5 * eHeld;
-    crossed = (saw >= eHeldPos) * (saw' < eHeldPos);
-    sn = e' * float(crossed);
+saw = os.lf_sawpos(f0);
+sawdiff = saw - saw';
+e = float(no.noise); // float() keeps 4.656613e-10f scaling here instead of later
+eHeld = e : ba.latch(sawdiff);
+eHeldPos = 0.5 + 0.5 * eHeld;
+crossed = (saw >= eHeldPos) * (saw' < eHeldPos);
+sn = e' * float(crossed);
 };
 
 
@@ -396,8 +396,8 @@ with {
 //------------------------------------------------------------
 velvet_noise(amp, f0) = vn
 with {
-    sn = no.sparse_noise(f0);
-    vn = amp * ma.signum(sn);
+sn = no.sparse_noise(f0);
+vn = amp * ma.signum(sn);
 };
 
 
@@ -421,10 +421,10 @@ with {
 //------------------------------------------------------------
 gnoise(N) = uvgwn
 with {
-    uwn = no.multinoise(N); // uniform white noise in [-1,1] on N channels
-    gwn = uwn :> _;         // sum of uniform approaches Gaussian by centeral limit thm
-    sigma = sqrt(N/3.0);    // rms of each uwn channel
-    uvgwn = gwn / sigma;	// approaches zero-mean, unit-variance Gaussian white noise, for large N
+uwn = no.multinoise(N); // uniform white noise in [-1,1] on N channels
+gwn = uwn :> _;         // sum of uniform approaches Gaussian by centeral limit thm
+sigma = sqrt(N/3.0);    // rms of each uwn channel
+uvgwn = gwn / sigma;	// approaches zero-mean, unit-variance Gaussian white noise, for large N
 };
 
 gnoisem(N) = gnoise(N) * 0.625; // Equalizes loudness to that of no.noise (thanks Mykle Hansen)
@@ -459,7 +459,7 @@ released under LGPL, STK-4.3, MIT, BSD, or a similar FOSS license.
 // Where:
 //
 // * `N`: desired integer filter order (constant numerical expression)
-// * `alpha`: slope of roll-off, between -1 and 1. -1 corresponds to 
+// * `alpha`: slope of roll-off, between -1 and 1. -1 corresponds to
 // brown/red noise, -1/2 pink noise, 0 white noise, 1/2 blue noise,
 // and 1 violet/azure noise.
 //
@@ -473,15 +473,15 @@ declare colored_noise license "MIT-style STK-4.3 license";
 
 colored_noise(N,alpha) = no.noise : fi.dcblocker : fi.spectral_tilt(N,fmin,bw,alpha) : *(uniNorm(alpha * 2)) : max(-1.0) : min(1.0)
 with {
-    fmin = 20.0;
-    fmax = 20000.0;
-    bw = fmax - fmin;
+fmin = 20.0;
+fmax = 20000.0;
+bw = fmax - fmin;
 
-    uniNorm(alpha) = (a*exp(-alpha*b))+(c*exp(-alpha*d)) : pow(-1)
-    with{
-        a = ba.if(ma.signum(alpha) > 0, 1, 0.8016);
-        b = ba.if(ma.signum(alpha) > 0, -4.28, -2.633);
-        c = ba.if(ma.signum(alpha) > 0, 0, 0.1984);
-        d = ba.if(ma.signum(alpha) > 0, 0, -0.7196);
-    };
+uniNorm(alpha) = (a*exp(-alpha*b))+(c*exp(-alpha*d)) : pow(-1)
+with{
+a = ba.if(ma.signum(alpha) > 0, 1, 0.8016);
+b = ba.if(ma.signum(alpha) > 0, -4.28, -2.633);
+c = ba.if(ma.signum(alpha) > 0, 0, 0.1984);
+d = ba.if(ma.signum(alpha) > 0, 0, -0.7196);
+};
 };
